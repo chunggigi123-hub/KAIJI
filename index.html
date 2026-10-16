@@ -1891,7 +1891,9 @@ if(positionSnapshot){
       relativeComparison:collected.length===2
         ? relativeComparison(collected[0],collected[1])
         : null,
-      additionalDataFailure:additionalError||null
+      additionalDataFailure: additionalError || null,
+userPosition: positionContext,
+positionDataFailure: positionError || null
     };
 
     const actualLabel=collected.map(c=>shortName(c.symbol)).join(' + ');
