@@ -1387,23 +1387,7 @@ async function collectAnalysis(symbol,now){
   if(daily.length<200) warnings.push('200일 이동평균 산출 불가');
   if(now-daily.at(-1).closeTime>DAY) warnings.push('최신 완료 일봉이 오래됨');
   if(now-hourly.at(-1).closeTime>4*60*60*1000) warnings.push('최신 완료 4시간봉이 오래됨');
-  let positionContext = null;
-let positionError = '';
 
-if(positionSnapshot){
-  const selectedAsset = collected.find(c => c.symbol === selected);
-
-  if(!selectedAsset){
-    positionError =
-      '선택 코인의 차트 수집 실패로 보유 포지션 의견을 생성하지 않았습니다.';
-  }else{
-    try{
-      positionContext = await buildPositionContext(positionSnapshot);
-    }catch(e){
-      positionError = '포지션 평가 불가: ' + e.message;
-    }
-  }
-}
   const payload={
     symbol,
     market:'Binance USDT perpetual futures',
