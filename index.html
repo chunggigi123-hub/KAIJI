@@ -1914,8 +1914,8 @@ positionDataFailure: positionError || null
         body:JSON.stringify({
           model:MODEL,
           store:false,
-          max_output_tokens:6500,
-          instructions:INSTRUCTIONS,
+          max_output_tokens:10000,
+          instructions:INSTRUCTIONS + '\n\n' + POSITION_INSTRUCTIONS,,
           input:JSON.stringify(payload)
         })
       },
