@@ -1941,6 +1941,30 @@ positionDataFailure: positionError || null
       actualLabel+' · '+MODEL+' · 생성 '+new Date().toLocaleString();
 
     const notices=[];
+    if(positionSnapshot){
+  const p = positionSnapshot;
+
+  notices.push(
+    '[분석 당시 입력 포지션]\n' +
+    '코인: ' + shortName(p.symbol) +
+    ' · 방향: ' + p.side +
+    ' · 레버리지: ' + p.leverage + 'x\n' +
+    '진입가: ' + price(p.entryPrice) + ' USDT\n' +
+    '입력 증거금: ' + fmt(p.marginUSDT) + ' USDT\n' +
+    '추정 수량: ' + fmt(p.estimatedQuantity, 8) + '\n' +
+    '입력 목표가: ' + price(p.userTargetPrice) + ' USDT\n' +
+    '입력 손절가: ' +
+      (p.userStopPrice === null
+        ? '미입력'
+        : price(p.userStopPrice) + ' USDT') + '\n' +
+    '설정 기준시각: ' + p.capturedAtUTC + '\n' +
+    '검토 기간: 7~30일'
+  );
+}
+
+if(positionError){
+  notices.push('[포지션 분석 제한]\n' + positionError);
+}
     if(additionalError) notices.push('[추가 코인 데이터 오류]\n'+additionalError);
     for(const c of collected){
       if(c.payload.warnings.length){
