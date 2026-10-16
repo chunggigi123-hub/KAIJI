@@ -2794,5 +2794,657 @@ window.addEventListener('pageshow',()=>{
   render();
 })();
 </script>
+<!-- 함께하는 트레이딩 기록장 -->
+<script>
+(function(){
+  'use strict';
+
+  if(document.getElementById('ktJournal')) return;
+
+  const KEY = 'kaiji-trade-journal-v1';
+  const el = id => document.getElementById(id);
+
+  let state = {
+    version: 1,
+    active: null,
+    trades: []
+  };
+
+  let storageReady = true;
+
+  const panel = document.createElement('section');
+  panel.id = 'ktJournal';
+  panel.className = 'panel';
+  panel.style.marginTop = '15px';
+
+  panel.innerHTML = `
+    <div class="section-head">
+      <h2>함께하는 트레이딩 기록</h2>
+      <span class="badge">수동 기록 · 실제 주문 없음</span>
+    </div>
+
+    <p class="small muted">
+      같은 포지션을 함께 관리하는 기록장입니다.
+      종료한 거래의 순손익을 누적합니다.
+    </p>
+
+    <div class="hero">
+      <div class="small muted">누적 실현 순손익</div>
+      <div id="ktNet" class="big">0.00 USDT</div>
+      <div id="ktStats" class="small muted"></div>
+    </div>
+
+    <div class="metrics">
+      <div class="metric">
+        <span>이익 거래 순손익 합계</span>
+        <strong id="ktProfit">—</strong>
+      </div>
+      <div class="metric">
+        <span>손실 거래 순손익 합계</span>
+        <strong id="ktLoss">—</strong>
+      </div>
+      <div class="metric">
+        <span>누적 거래 수수료</span>
+        <strong id="ktFees">—</strong>
+      </div>
+      <div class="metric">
+        <span>누적 펀딩 순비용 · 지급 + / 수취 −</span>
+        <strong id="ktFunding">—</strong>
+      </div>
+    </div>
+
+    <div class="notice">
+      누적 손익에는 종료한 거래만 포함됩니다.
+      진행 중인 포지션의 평가손익은 포함하지 않습니다.
+      총 계좌잔고나 입출금은 추적하지 않습니다.
+    </div>
+
+    <h3 style="font-size:15px;margin:20px 0 8px">
+      1. 현재 포지션 등록
+    </h3>
+
+    <p class="tiny muted">
+      관심 코인에서 실제 보유 코인을 선택하고,
+      상단 계산기에 해당 포지션 설정을 입력한 뒤 등록하세요.
+      BTC는 시장 기준으로 두고 추가 선택 코인을 등록합니다.
+    </p>
+
+    <button id="ktRegister" type="button" class="primary">
+      계산기의 포지션으로 함께 시작
+    </button>
+
+    <div id="ktActive" class="notice"
+      style="white-space:pre-wrap"></div>
+
+    <button id="ktCancel" type="button" class="link" hidden>
+      잘못 등록한 진행 포지션 취소
+    </button>
+
+    <div id="ktCloseArea" hidden>
+      <h3 style="font-size:15px;margin:20px 0 8px">
+        2. 실제 종료 결과 입력
+      </h3>
+
+      <label for="ktExit">실제 평균 종료 가격</label>
+      <div class="field">
+        <input id="ktExit" type="number"
+          min="0" step="any" placeholder="실제 전량 종료 가격">
+        <span class="unit">USDT</span>
+      </div>
+
+      <label for="ktActualFees">
+        실제 진입 + 종료 수수료 합계 · 선택 입력
+      </label>
+      <div class="field">
+        <input id="ktActualFees" type="number"
+          min="0" step="any" placeholder="빈칸이면 등록한 수수료율로 추정">
+        <span class="unit">USDT</span>
+      </div>
+
+      <label for="ktFundingInput">
+        보유 중 펀딩 순비용 · 지급 양수 / 수취 음수
+      </label>
+      <div class="field">
+        <input id="ktFundingInput" type="number"
+          step="any" value="0">
+        <span class="unit">USDT</span>
+      </div>
+
+      <p class="tiny muted">
+        예: 5 USDT 지급이면 5, 3 USDT 수취이면 -3.
+        0으로 두면 펀딩비 없음으로 계산합니다.
+      </p>
+
+      <label for="ktNote">이번 거래 메모 · 선택 입력</label>
+      <input id="ktNote" type="text" maxlength="500"
+        placeholder="예: 저항 구간에서 종료 / 손절 기준 준수">
+
+      <div id="ktPreview" class="notice"
+        style="white-space:pre-wrap"></div>
+
+      <button id="ktClose" type="button" class="primary">
+        전량 종료 기록 · 누적 손익 반영
+      </button>
+    </div>
+
+    <p id="ktStatus" class="error" role="status"></p>
+
+    <details>
+      <summary>종료 거래 기록 보기</summary>
+      <div id="ktHistory"
+        style="display:grid;gap:10px;margin-top:10px"></div>
+    </details>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button id="ktBackup" type="button" class="preset">
+        전체 거래 기록 백업
+      </button>
+      <button id="ktReset" type="button" class="preset">
+        기록장 전체 초기화
+      </button>
+    </div>
+
+    <div class="notice risk">
+      한 번에 한 포지션 · 추가 진입 없는 전량 종료 기준입니다.
+      보유 수량은 입력 증거금 × 레버리지 ÷ 진입가로 계산합니다.
+      실제 수량과 다르면 등록하지 마세요.<br>
+      청산·부분 종료·증거금 변경 등 복잡한 체결은 이 기록장에서
+      정확히 재현하지 못할 수 있습니다.<br>
+      기록은 이 브라우저에만 저장되며 자동 동기화되지 않습니다.
+      API 키는 저장하지 않습니다.
+    </div>
+  `;
+
+  const anchor =
+    el('kaijiHistoryPanel') ||
+    document.querySelector('section.ai');
+
+  if(!anchor) return;
+  anchor.after(panel);
+
+  const money = value =>
+    Number(value).toLocaleString('en-US',{
+      minimumFractionDigits:2,
+      maximumFractionDigits:2
+    });
+
+  const signedMoney = value =>
+    (value > 0 ? '+' : '') + money(value);
+
+  const dateText = value =>
+    new Date(value).toLocaleString('ko-KR');
+
+  const finite = value =>
+    typeof value === 'number' && Number.isFinite(value);
+
+  function message(text, error=false){
+    el('ktStatus').textContent = text;
+    el('ktStatus').style.color =
+      error ? 'var(--red)' : 'var(--green)';
+  }
+
+  function tint(node, value){
+    node.classList.remove('positive','negative');
+    if(value > 0) node.classList.add('positive');
+    if(value < 0) node.classList.add('negative');
+  }
+
+  function validPosition(p){
+    return p &&
+      typeof p.id === 'string' &&
+      typeof p.symbol === 'string' &&
+      /^[A-Z0-9]{1,24}USDT$/.test(p.symbol) &&
+      [1,-1].includes(p.direction) &&
+      [
+        p.margin, p.leverage, p.entry, p.quantity,
+        p.notional, p.feeIn, p.feeOut, p.registeredAt
+      ].every(finite) &&
+      p.margin > 0 &&
+      Number.isInteger(p.leverage) &&
+      p.leverage >= 1 && p.leverage <= 125 &&
+      p.entry > 0 && p.quantity > 0 && p.notional > 0 &&
+      p.feeIn >= 0 && p.feeIn <= 1 &&
+      p.feeOut >= 0 && p.feeOut <= 1 &&
+      !Number.isNaN(new Date(p.registeredAt).getTime());
+  }
+
+  function validTrade(t){
+    return t &&
+      validPosition(t.position) &&
+      typeof t.id === 'string' &&
+      typeof t.note === 'string' &&
+      typeof t.feeSource === 'string' &&
+      [
+        t.exit, t.gross, t.fees, t.funding,
+        t.net, t.roi, t.closedAt
+      ].every(finite) &&
+      t.exit > 0 &&
+      t.fees >= 0 &&
+      !Number.isNaN(new Date(t.closedAt).getTime());
+  }
+
+  try{
+    const raw = localStorage.getItem(KEY);
+
+    if(raw !== null){
+      const saved = JSON.parse(raw);
+
+      if(
+        !saved ||
+        saved.version !== 1 ||
+        !(saved.active === null || validPosition(saved.active)) ||
+        !Array.isArray(saved.trades) ||
+        !saved.trades.every(validTrade)
+      ){
+        throw new Error('invalid journal');
+      }
+
+      state = saved;
+    }
+  }catch{
+    storageReady = false;
+    message(
+      '기존 기록을 읽지 못했습니다. 덮어쓰기를 막기 위해 저장을 중지했습니다. ' +
+      '브라우저 저장소를 확인하세요. 전체 초기화는 기존 기록을 삭제합니다.',
+      true
+    );
+  }
+
+  function commit(next){
+    if(!storageReady){
+      message('저장소 오류로 기록 변경이 중지되어 있습니다.',true);
+      return false;
+    }
+
+    try{
+      // 저장 성공 후에만 현재 화면 상태를 변경한다.
+      localStorage.setItem(KEY,JSON.stringify(next));
+      state = next;
+      return true;
+    }catch{
+      message(
+        '저장 실패: 저장 공간 또는 브라우저 권한을 확인하세요. ' +
+        '방금 변경은 반영되지 않았습니다.',
+        true
+      );
+      return false;
+    }
+  }
+
+  function readCalculator(){
+    const read = id => {
+      const raw = el(id).value.trim();
+      return raw === '' ? NaN : Number(raw);
+    };
+
+    if(currentCoin === 'BTCUSDT'){
+      throw new Error(
+        '실제로 포지션을 보유한 BTC 이외의 코인을 관심 목록에서 선택하세요.'
+      );
+    }
+
+    const margin = read('margin');
+    const leverage = read('leverage');
+    const entry = read('entry');
+    const feeIn = read('feeIn');
+    const feeOut = read('feeOut');
+
+    const notional = margin * leverage;
+    const quantity = notional / entry;
+
+    const p = {
+      id: Date.now().toString(36) + '-' +
+        Math.random().toString(36).slice(2,10),
+      symbol: currentCoin,
+      direction: side,
+      margin,
+      leverage,
+      entry,
+      feeIn,
+      feeOut,
+      notional,
+      quantity,
+      registeredAt: Date.now()
+    };
+
+    if(!validPosition(p)){
+      throw new Error('상단 계산기의 진입가·증거금·레버리지·수수료를 확인하세요.');
+    }
+
+    return p;
+  }
+
+  function calculateClose(){
+    const p = state.active;
+    if(!p) throw new Error('등록된 진행 포지션이 없습니다.');
+
+    const exitRaw = el('ktExit').value.trim();
+    const feesRaw = el('ktActualFees').value.trim();
+    const fundingRaw = el('ktFundingInput').value.trim();
+
+    const exit = exitRaw === '' ? NaN : Number(exitRaw);
+    const funding = fundingRaw === '' ? NaN : Number(fundingRaw);
+
+    const fees = feesRaw === ''
+      ? p.notional * p.feeIn / 100 +
+        p.quantity * exit * p.feeOut / 100
+      : Number(feesRaw);
+
+    if(
+      ![exit, fees, funding].every(Number.isFinite) ||
+      exit <= 0 || fees < 0
+    ){
+      throw new Error('양수 종료 가격, 0 이상 수수료, 숫자 펀딩비를 입력하세요.');
+    }
+
+    const gross = p.direction * p.quantity * (exit - p.entry);
+    const net = gross - fees - funding;
+    const roi = net / p.margin * 100;
+
+    if(![gross,net,roi].every(Number.isFinite)){
+      throw new Error('손익 계산 범위를 초과했습니다.');
+    }
+
+    return {
+      id: p.id,
+      position: {...p},
+      exit,
+      gross,
+      fees,
+      feeSource: feesRaw === '' ? '입력 수수료율로 추정' : '실제 수수료 입력',
+      funding,
+      net,
+      roi,
+      note: el('ktNote').value.trim(),
+      // 실제 체결시각이 아니라 종료값을 등록한 시각.
+      closedAt: Date.now()
+    };
+  }
+
+  function preview(){
+    if(!state.active) return;
+
+    try{
+      const t = calculateClose();
+
+      el('ktPreview').textContent =
+        '수수료 전 손익: ' + signedMoney(t.gross) + ' USDT\n' +
+        '거래 수수료: ' + money(t.fees) +
+          ' USDT (' + t.feeSource + ')\n' +
+        '펀딩 순비용: ' + signedMoney(t.funding) + ' USDT\n' +
+        '최종 순손익: ' + signedMoney(t.net) + ' USDT\n' +
+        '등록 증거금 대비: ' + signedMoney(t.roi) + '%';
+
+      el('ktClose').disabled = !storageReady;
+    }catch(e){
+      el('ktPreview').textContent = e.message;
+      el('ktClose').disabled = true;
+    }
+  }
+
+  function totals(){
+    const result = {
+      net:0, profit:0, loss:0, fees:0, funding:0,
+      wins:0, losses:0, flat:0
+    };
+
+    for(const t of state.trades){
+      result.net += t.net;
+      result.fees += t.fees;
+      result.funding += t.funding;
+
+      if(t.net > 0){
+        result.profit += t.net;
+        result.wins++;
+      }else if(t.net < 0){
+        result.loss += t.net;
+        result.losses++;
+      }else{
+        result.flat++;
+      }
+    }
+
+    return result;
+  }
+
+  function render(){
+    const s = totals();
+    const count = state.trades.length;
+
+    el('ktNet').textContent = signedMoney(s.net) + ' USDT';
+    el('ktProfit').textContent = signedMoney(s.profit) + ' USDT';
+    el('ktLoss').textContent = signedMoney(s.loss) + ' USDT';
+    el('ktFees').textContent = money(s.fees) + ' USDT';
+    el('ktFunding').textContent = signedMoney(s.funding) + ' USDT';
+
+    tint(el('ktNet'),s.net);
+    tint(el('ktProfit'),s.profit);
+    tint(el('ktLoss'),s.loss);
+
+    el('ktStats').textContent =
+      '종료 ' + count + '건 · ' +
+      s.wins + '승 / ' + s.losses + '패 / ' + s.flat + '본전' +
+      (count
+        ? ' · 승률 ' + (s.wins / count * 100).toFixed(1) + '%'
+        : '') +
+      ' · 비용 차감 후 기준';
+
+    const p = state.active;
+
+    el('ktRegister').disabled = !!p || !storageReady;
+    el('ktCancel').hidden = !p;
+    el('ktCancel').disabled = !storageReady;
+    el('ktCloseArea').hidden = !p;
+
+    el('ktActive').textContent = p
+      ? (
+        '[함께 관리 중인 포지션]\n' +
+        shortName(p.symbol) + ' · ' +
+        (p.direction === 1 ? 'LONG' : 'SHORT') +
+        ' · ' + p.leverage + 'x\n' +
+        '진입가: ' + price(p.entry) + ' USDT\n' +
+        '등록 증거금: ' + money(p.margin) + ' USDT\n' +
+        '계산 수량: ' + p.quantity.toPrecision(10) + '\n' +
+        '등록 시각: ' + dateText(p.registeredAt) + '\n\n' +
+        '계산기나 선택 코인을 바꿔도 이 등록값은 바뀌지 않습니다.'
+      )
+      : '진행 중인 포지션이 없습니다. 실제 보유 포지션을 등록하세요.';
+
+    const history = el('ktHistory');
+    history.replaceChildren();
+
+    if(!count){
+      const empty = document.createElement('p');
+      empty.className = 'small muted';
+      empty.textContent = '아직 종료한 거래가 없습니다.';
+      history.append(empty);
+    }
+
+    for(const t of state.trades){
+      const item = document.createElement('div');
+      item.className = 'metric';
+
+      const title = document.createElement('strong');
+      title.textContent =
+        shortName(t.position.symbol) + ' · ' +
+        (t.position.direction === 1 ? 'LONG' : 'SHORT') +
+        ' · ' + signedMoney(t.net) + ' USDT';
+      tint(title,t.net);
+
+      const body = document.createElement('div');
+      body.className = 'tiny muted';
+      body.style.whiteSpace = 'pre-wrap';
+      body.style.marginTop = '7px';
+
+      body.textContent =
+        '종료 등록: ' + dateText(t.closedAt) + '\n' +
+        '진입 ' + price(t.position.entry) +
+        ' → 종료 ' + price(t.exit) + '\n' +
+        '증거금 ' + money(t.position.margin) +
+        ' USDT · ' + t.position.leverage + 'x\n' +
+        '수수료 전 손익 ' + signedMoney(t.gross) + ' USDT\n' +
+        '수수료 ' + money(t.fees) +
+        ' USDT (' + t.feeSource + ')\n' +
+        '펀딩 순비용 ' + signedMoney(t.funding) + ' USDT\n' +
+        '등록 증거금 대비 ' + signedMoney(t.roi) + '%' +
+        (t.note ? '\n메모: ' + t.note : '');
+
+      const remove = document.createElement('button');
+      remove.type = 'button';
+      remove.className = 'link';
+      remove.textContent = '오입력 기록 삭제';
+      remove.disabled = !storageReady;
+
+      remove.onclick = () => {
+        if(!confirm(
+          '이 거래를 삭제할까요?\n누적 손익에서도 제외됩니다. 되돌릴 수 없습니다.'
+        )) return;
+
+        if(commit({
+          ...state,
+          trades: state.trades.filter(x => x.id !== t.id)
+        })){
+          render();
+          message('선택 거래를 삭제했습니다.');
+        }
+      };
+
+      item.append(title,body,remove);
+      history.append(item);
+    }
+
+    if(p) preview();
+  }
+
+  el('ktRegister').onclick = () => {
+    if(state.active || !storageReady) return;
+
+    try{
+      const p = readCalculator();
+
+      if(!confirm(
+        '다음 포지션으로 함께 기록을 시작할까요?\n\n' +
+        shortName(p.symbol) + ' ' +
+        (p.direction === 1 ? 'LONG' : 'SHORT') + '\n' +
+        '진입가: ' + price(p.entry) + '\n' +
+        '증거금: ' + money(p.margin) + ' USDT\n' +
+        '레버리지: ' + p.leverage + 'x\n' +
+        '계산 수량: ' + p.quantity.toPrecision(10) + '\n\n' +
+        '이 수량이 실제 보유 수량과 일치하는지 확인하세요.\n' +
+        '실제 주문은 전송하지 않습니다.'
+      )) return;
+
+      if(commit({...state,active:p})){
+        el('ktExit').value = '';
+        el('ktActualFees').value = '';
+        el('ktFundingInput').value = '0';
+        el('ktNote').value = '';
+        render();
+        message('포지션을 등록했습니다. 종료 후 실제 체결값을 입력하세요.');
+      }
+    }catch(e){
+      message(e.message,true);
+    }
+  };
+
+  el('ktCancel').onclick = () => {
+    if(!state.active) return;
+
+    if(!confirm(
+      '진행 포지션 등록을 취소할까요?\n' +
+      '손익 기록은 남기지 않습니다. 실제 거래소 포지션은 변경되지 않습니다.'
+    )) return;
+
+    if(commit({...state,active:null})){
+      render();
+      message('진행 포지션 등록을 취소했습니다.');
+    }
+  };
+
+  for(const id of [
+    'ktExit','ktActualFees','ktFundingInput'
+  ]){
+    el(id).addEventListener('input',preview);
+  }
+
+  el('ktClose').onclick = () => {
+    if(!state.active || !storageReady) return;
+
+    try{
+      const t = calculateClose();
+
+      if(!confirm(
+        '실제로 전량 종료한 거래인가요?\n\n' +
+        shortName(t.position.symbol) + '\n' +
+        '종료가: ' + price(t.exit) + '\n' +
+        '순손익: ' + signedMoney(t.net) + ' USDT\n\n' +
+        '이 결과를 누적 기록에 반영합니다.'
+      )) return;
+
+      if(commit({
+        ...state,
+        active:null,
+        trades:[t,...state.trades]
+      })){
+        render();
+        message(
+          '거래를 저장했습니다. 이번 순손익: ' +
+          signedMoney(t.net) + ' USDT'
+        );
+      }
+    }catch(e){
+      message(e.message,true);
+    }
+  };
+
+  el('ktBackup').onclick = () => {
+    if(!storageReady){
+      message('저장소 읽기 오류 상태에서는 정상 백업을 만들 수 없습니다.',true);
+      return;
+    }
+
+    const blob = new Blob(
+      [JSON.stringify(state,null,2)],
+      {type:'application/json;charset=utf-8'}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download =
+      '카이지-거래기록-' +
+      new Date().toISOString().slice(0,10) + '.json';
+
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    setTimeout(() => URL.revokeObjectURL(url),30000);
+    message('거래 기록 백업 다운로드를 요청했습니다.');
+  };
+
+  el('ktReset').onclick = () => {
+    if(!confirm(
+      '진행 포지션과 종료 거래를 모두 삭제할까요?\n' +
+      '누적 손익도 0으로 초기화됩니다.\n' +
+      '되돌릴 수 없으니 먼저 백업하세요.'
+    )) return;
+
+    try{
+      localStorage.removeItem(KEY);
+
+      state = {version:1,active:null,trades:[]};
+      storageReady = true;
+
+      render();
+      message('거래 기록장을 초기화했습니다.');
+    }catch{
+      message('기록 삭제에 실패했습니다.',true);
+    }
+  };
+
+  render();
+})();
+</script>
 </body>
 </html>
