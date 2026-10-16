@@ -1804,9 +1804,39 @@ $('analyze').onclick=async()=>{
     return;
   }
 
-  const selected=currentCoin;
-  const targets=selected==='BTCUSDT'?['BTCUSDT']:['BTCUSDT',selected];
-  const label=targets.map(shortName).join(' + ');
+const selected = currentCoin;
+const targets = selected === 'BTCUSDT'
+  ? ['BTCUSDT']
+  : ['BTCUSDT', selected];
+
+const label = targets.map(shortName).join(' + ');
+
+let positionSnapshot = null;
+
+try{
+  positionSnapshot = readPositionSnapshot(selected);
+}catch(e){
+  $('aiError').textContent = e.message;
+  return;
+}
+
+if(positionSnapshot){
+  const p = positionSnapshot;
+
+  const accepted = confirm(
+    '다음 포지션을 AI 분석에 연결합니다.\n\n' +
+    '보유 코인: ' + shortName(p.symbol) + '\n' +
+    '방향: ' + p.side + '\n' +
+    '진입가: ' + price(p.entryPrice) + ' USDT\n' +
+    '증거금: ' + fmt(p.marginUSDT) + ' USDT\n' +
+    '레버리지: ' + p.leverage + 'x\n' +
+    '추정 수량: ' + fmt(p.estimatedQuantity, 8) + '\n\n' +
+    '입력값과 추정 수량이 실제 보유 포지션에 해당하나요?\n' +
+    '해당 설정이 차트 데이터와 함께 OpenAI로 전송됩니다.'
+  );
+
+  if(!accepted) return;
+}
 
   aiBusy=true;
   lastAiRequest=Date.now();
