@@ -1882,19 +1882,57 @@ if(positionSnapshot){
       }
     }
 
-    const payload={
-      analysisTimeUTC:new Date(now).toISOString(),
-      requestedSymbols:targets,
-      analyzedSymbols:collected.map(c=>c.symbol),
-      focus:'최근 90일 우선, 최근 1년은 장기 맥락 보조',
-      assets:collected.map(c=>c.payload),
-      relativeComparison:collected.length===2
-        ? relativeComparison(collected[0],collected[1])
-        : null,
-      additionalDataFailure: additionalError || null,
-userPosition: positionContext,
-positionDataFailure: positionError || null
-    };
+    // BTC 수집 실패 시 분석을 진행하지 않는다.
+const btc = await collectAnalysis('BTCUSDT', now);
+const collected = [btc];
+let additionalError = '';
+
+if(selected !== 'BTCUSDT'){
+  try{
+    collected.push(await collectAnalysis(selected, now));
+  }catch(e){
+    additionalError =
+      shortName(selected) + ' 추가 분석 불가: ' + e.message;
+  }
+}
+
+// 포지션 평가는 모든 코인의 차트 수집이 끝난 다음 실행한다.
+let positionContext = null;
+let positionError = '';
+
+if(positionSnapshot){
+  const selectedAsset = collected.find(
+    c => c.symbol === selected
+  );
+
+  if(!selectedAsset){
+    positionError =
+      '선택 코인의 차트 수집 실패로 보유 포지션 의견을 생성하지 않았습니다.';
+  }else{
+    try{
+      positionContext = await buildPositionContext(positionSnapshot);
+      }catch(e){
+      positionError = '포지션 평가 불가: ' + e.message;
+    }
+  }
+}
+
+// OpenAI에 보내는 최종 분석 자료
+const payload = {
+  analysisTimeUTC: new Date(now).toISOString(),
+  requestedSymbols: targets,
+  analyzedSymbols: collected.map(c => c.symbol),
+  focus: '최근 90일 우선, 최근 1년은 장기 맥락 보조',
+  assets: collected.map(c => c.payload),
+
+  relativeComparison: collected.length === 2
+    ? relativeComparison(collected[0], collected[1])
+    : null,
+
+  additionalDataFailure: additionalError || null,
+  userPosition: positionContext,
+  positionDataFailure: positionError || null
+};
 
     const actualLabel=collected.map(c=>shortName(c.symbol)).join(' + ');
     $('reportMeta').textContent=actualLabel+' · AI 기술 분석 중';
