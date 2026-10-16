@@ -1853,18 +1853,7 @@ if(positionSnapshot){
     const now=Number(timeData.serverTime);
     if(!Number.isFinite(now)||now<=0) throw new Error('거래소 기준시각을 확인하지 못했습니다.');
 
-    const btc=await collectAnalysis('BTCUSDT',now);
-    const collected=[btc];
-    let additionalError='';
-
-    if(selected!=='BTCUSDT'){
-      try{
-        collected.push(await collectAnalysis(selected,now));
-      }catch(e){
-        additionalError=shortName(selected)+' 추가 분석 불가: '+e.message;
-      }
-    }
-
+    
     // BTC 수집 실패 시 분석을 진행하지 않는다.
 const btc = await collectAnalysis('BTCUSDT', now);
 const collected = [btc];
