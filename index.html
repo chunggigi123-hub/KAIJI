@@ -377,7 +377,20 @@ footer{text-align:center;color:var(--muted);font-size:10px;line-height:1.9;margi
     <p class="tiny muted" style="margin-top:8px">
       가격은 계산용 예시입니다. 실제 주문을 전송하지 않습니다.
     </p>
+<label for="stopLoss">현재 계획한 손절 가격 · 선택 입력</label>
+<div class="field">
+  <input id="stopLoss" type="number" min="0" step="any"
+    placeholder="미입력 시 기술적 무효화 조건만 검토">
+  <span class="unit">USDT</span>
+</div>
 
+<div class="notice">
+  <b>AI 포지션 연결 기준</b><br>
+  관심 코인에서 선택한 BTC 이외의 코인을 보유 포지션으로 간주합니다.<br>
+  위의 롱·숏, 진입가, 증거금, 레버리지가 해당 코인의 실제 설정인지
+  분석 실행 전에 확인하세요.<br>
+  분석 기간은 7~30일이며 자동 주문은 실행하지 않습니다.
+</div>
     <details>
       <summary>거래 수수료 · 유지증거금률</summary>
       <div class="two">
@@ -547,7 +560,7 @@ footer{text-align:center;color:var(--muted);font-size:10px;line-height:1.9;margi
 
 const $ = id => document.getElementById(id);
 const BINANCE = 'https://fapi.binance.com';
-const MODEL = 'gpt-4.1-mini';
+const MODEL = 'gpt-4.1';
 const DAY = 86400000;
 const DEFAULT_COINS = ['BTCUSDT','ETHUSDT','BNBUSDT','SOLUSDT','XRPUSDT'];
 const STORAGE_KEY = 'kaiji-watchlist-v1';
