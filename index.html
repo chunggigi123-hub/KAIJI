@@ -1609,7 +1609,7 @@ async function buildPositionContext(p){
       p.direction * p.estimatedQuantity * (value - mark);
 
     if(![gross, fees, net, incrementalGross].every(Number.isFinite)){
-      throw new Error('ポジション損益の計算範囲を超えました。');
+      throw new Error('포지션 손익 계산 범위를 초과했습니다.');
     }
 
     return {
