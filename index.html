@@ -765,14 +765,18 @@ for(const id of ['margin','entry','exit','feeIn','feeOut','mmr']){
   $(id).addEventListener('input',calculate);
 }
 
-$('usePrice').onclick=()=>{
-  const ticker=tickers.get(currentCoin);
-  if(!ticker || Date.now()-ticker.receivedAt>120000){
-    $('calcError').textContent=시세가 오래되었습니다. 새로고침 후 적용하세요.'
+$('usePrice').onclick = () => {
+  const ticker = tickers.get(currentCoin);
+
+  if (!ticker || Date.now() - ticker.receivedAt > 120000) {
+    $('calcError').textContent = '시세가 오래되었습니다. 새로고침 후 적용하세요.';
+    return;
   }
-  $('entry').value=ticker.price;
+
+  $('entry').value = ticker.price;
   calculate();
 };
+
 
 /* ---------- 관심 코인 ---------- */
 
@@ -2125,6 +2129,6 @@ window.addEventListener('pageshow',()=>{
     if(!document.hidden) refreshFixedBTCChart(false);
   },60000);
 })();
-                 </script>
+</script>
 </body>
 </html>
