@@ -1680,5 +1680,451 @@ window.addEventListener('pageshow',()=>{
   $('apiKey').value='';
 });
 </script>
+  <!-- 카이지 배너 + BTC 고정 차트 추가 기능 -->
+<script>
+(function(){
+  'use strict';
+
+  // 실수로 같은 코드를 두 번 넣었을 때 중복 실행 방지
+  if(document.getElementById('kaijiFixedBTCPanel')) return;
+
+  const header = document.querySelector('main > header');
+  const selectedPanel = document.getElementById('chart')?.closest('.panel');
+
+  if(!header || !selectedPanel){
+    console.warn('카이지 추가 기능: 기존 화면 요소를 찾지 못했습니다.');
+    return;
+  }
+
+  /* ---------- 추가 스타일 ---------- */
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .kaiji-banner{
+      margin:0 0 17px;
+      overflow:hidden;
+      border:1px solid var(--line);
+      border-radius:9px;
+      background:#fff;
+    }
+    .kaiji-banner img{
+      display:block;
+      width:100%;
+      height:clamp(150px,30vw,300px);
+      object-fit:contain;
+      object-position:center;
+      background:#fff;
+    }
+    .kaiji-banner-placeholder{
+      min-height:140px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      padding:22px 14px;
+      text-align:center;
+      background:linear-gradient(135deg,#ffffff,#efefea);
+    }
+    .kaiji-banner-placeholder strong{
+      font-size:23px;
+      font-weight:900;
+      letter-spacing:-1px;
+    }
+    .kaiji-banner-placeholder span{
+      font-size:11px;
+      color:var(--muted);
+    }
+    .kaiji-chart-stack{
+      display:grid;
+      grid-template-columns:minmax(0,1fr);
+      align-content:start;
+      gap:15px;
+      min-width:0;
+    }
+    .kaiji-chart-stack > [hidden]{
+      display:none!important;
+    }
+    .kaiji-fixed-label{
+      display:inline-block;
+      margin-bottom:7px;
+      color:var(--red);
+      font-size:10px;
+      font-weight:850;
+      letter-spacing:1px;
+    }
+    .kaiji-selected-label{
+      margin:0 0 12px;
+      color:var(--muted);
+      font-size:11px;
+      font-weight:750;
+    }
+    #kaijiFixedBTCPanel{
+      border-top:3px solid var(--ink);
+    }
+    @media(max-width:800px){
+      .kaiji-banner img{
+        height:clamp(150px,45vw,240px);
+      }
+    }
+  `;
+  document.head.append(style);
+
+  /* ---------- 상단 이미지 ---------- */
+
+  const banner = document.createElement('div');
+  banner.className = 'kaiji-banner';
+
+  const placeholder = document.createElement('div');
+  placeholder.className = 'kaiji-banner-placeholder';
+
+  const placeholderTitle = document.createElement('strong');
+  placeholderTitle.textContent = '도박묵시록 카이지';
+
+  const placeholderText = document.createElement('span');
+  placeholderText.textContent =
+    'index.html과 같은 폴더에 kaiji.jpg 이미지를 올려주세요.';
+
+  placeholder.append(placeholderTitle,placeholderText);
+
+  const bannerImage = document.createElement('img');
+  bannerImage.alt = '도박묵시록 카이지 테마 이미지';
+  bannerImage.decoding = 'async';
+  bannerImage.style.display = 'none';
+
+  bannerImage.addEventListener('load',()=>{
+    placeholder.hidden = true;
+    placeholder.style.display = 'none';
+    bannerImage.style.display = 'block';
+  });
+
+  bannerImage.addEventListener('error',()=>{
+    bannerImage.style.display = 'none';
+    placeholder.hidden = false;
+    placeholder.style.display = 'flex';
+  });
+
+  banner.append(bannerImage,placeholder);
+  header.prepend(banner);
+
+  // PNG 파일이면 아래 이름을 kaiji.png로 변경
+  bannerImage.src = './kaiji.jpg';
+
+  /* ---------- 차트 2개를 담을 영역 ---------- */
+
+  const stack = document.createElement('div');
+  stack.className = 'kaiji-chart-stack';
+
+  selectedPanel.parentElement.insertBefore(stack,selectedPanel);
+  stack.append(selectedPanel);
+
+  const selectedLabel = document.createElement('p');
+  selectedLabel.className = 'kaiji-selected-label';
+  selectedLabel.textContent = '선택 코인 · 추가 차트';
+  selectedPanel.prepend(selectedLabel);
+
+  const btcPanel = document.createElement('div');
+  btcPanel.className = 'panel';
+  btcPanel.id = 'kaijiFixedBTCPanel';
+
+  btcPanel.innerHTML = `
+    <div class="kaiji-fixed-label">BITCOIN · ALWAYS ON</div>
+
+    <div class="section-head">
+      <h2>BTCUSDT</h2>
+      <span class="badge">비트코인 고정 차트</span>
+    </div>
+
+    <div id="kaijiBTCPrice" class="price">—</div>
+    <div id="kaijiBTCChange" class="small muted">시세 조회 중…</div>
+    <p id="kaijiBTCQuoteError" class="error" role="status"></p>
+
+    <div class="chart-tools">
+      <button class="tab active" type="button"
+        data-btc-mode="d90" aria-pressed="true">3개월 · 일봉</button>
+      <button class="tab" type="button"
+        data-btc-mode="h90" aria-pressed="false">3개월 · 4시간봉</button>
+      <button class="tab" type="button"
+        data-btc-mode="y1" aria-pressed="false">1년 · 일봉</button>
+    </div>
+
+    <div class="chart-wrap">
+      <canvas id="kaijiBTCChart" role="img"
+        aria-label="항상 표시되는 비트코인 캔들 차트"></canvas>
+    </div>
+
+    <p id="kaijiBTCChartStatus" class="tiny muted">차트 조회 중…</p>
+    <p class="tiny muted">
+      다른 코인을 선택해도 이 차트는 유지됩니다.<br>
+      3개월은 최근 90일 기준 · 진행 중인 봉 포함
+    </p>
+  `;
+
+  stack.prepend(btcPanel);
+
+  const btcPrice = document.getElementById('kaijiBTCPrice');
+  const btcChange = document.getElementById('kaijiBTCChange');
+  const btcQuoteError = document.getElementById('kaijiBTCQuoteError');
+  const btcCanvas = document.getElementById('kaijiBTCChart');
+  const btcChartStatus = document.getElementById('kaijiBTCChartStatus');
+
+  let btcMode = 'd90';
+  let btcCandles = [];
+  let btcChartRequest = 0;
+  let btcPriceBusy = false;
+
+  /* ---------- 기존 선택 코인 영역 연동 ---------- */
+
+  function syncSelectedPanel(){
+    // BTC 선택 시 중복된 BTC 차트는 숨긴다.
+    // 다른 코인 선택 시 기존 차트를 추가 코인 차트로 사용한다.
+    selectedPanel.hidden = currentCoin === 'BTCUSDT';
+
+    if(currentCoin !== 'BTCUSDT'){
+      selectedLabel.textContent =
+        shortName(currentCoin) + ' · 선택 코인 추가 차트';
+    }
+  }
+
+  // 기존 기능을 유지하면서 선택 코인 화면의 표시만 조절한다.
+  const originalRenderMarket = renderMarket;
+
+  renderMarket = function(){
+    originalRenderMarket();
+    syncSelectedPanel();
+  };
+
+  syncSelectedPanel();
+
+  /* ---------- BTC 고정 시세 ---------- */
+
+  async function refreshFixedBTCPrice(){
+    if(btcPriceBusy) return;
+    btcPriceBusy = true;
+
+    try{
+      const ticker = await loadTicker('BTCUSDT');
+
+      btcPrice.textContent = price(ticker.price) + ' USDT';
+      btcChange.textContent =
+        signed(ticker.change) + '% · 24h · ' +
+        new Date(ticker.time).toLocaleTimeString();
+
+      paint(btcChange,ticker.change);
+      btcQuoteError.textContent = '';
+    }catch(error){
+      btcQuoteError.textContent =
+        error.message +
+        ' 기존 가격이 표시되어 있다면 최신 시세가 아닐 수 있습니다.';
+    }finally{
+      btcPriceBusy = false;
+    }
+  }
+
+  /* ---------- BTC 고정 차트 데이터 ---------- */
+
+  async function refreshFixedBTCChart(reset=false){
+    const mode = btcMode;
+    const requestId = ++btcChartRequest;
+
+    if(reset){
+      btcCandles = [];
+      btcChartStatus.textContent = '비트코인 차트 조회 중…';
+      drawFixedBTCChart();
+    }
+
+    try{
+      const now = Date.now();
+      const interval = mode === 'h90' ? '4h' : '1d';
+      const limit = mode === 'h90' ? 550 : 400;
+
+      const rows = await fetchCandles('BTCUSDT',interval,limit);
+
+      // 이전 기간 요청이 늦게 도착해도 새 차트를 덮어쓰지 않는다.
+      if(requestId !== btcChartRequest || mode !== btcMode) return;
+
+      const cutoff = mode === 'y1'
+        ? yearStart(now)
+        : now - 90 * DAY;
+
+      btcCandles = rows.filter(c=>c.closeTime >= cutoff);
+
+      if(!btcCandles.length){
+        throw new Error('표시할 비트코인 차트 데이터가 없습니다.');
+      }
+
+      drawFixedBTCChart();
+
+      btcChartStatus.textContent =
+        btcCandles.length + '개 봉 · 진행 봉 포함 · 60초 갱신 · ' +
+        new Date().toLocaleTimeString();
+    }catch(error){
+      if(requestId === btcChartRequest){
+        btcChartStatus.textContent =
+          error.message +
+          ' 기존 차트가 있다면 최신 데이터가 아닐 수 있습니다.';
+      }
+    }
+  }
+
+  /* ---------- BTC 캔들 그리기 ---------- */
+
+  function drawFixedBTCChart(){
+    const box = btcCanvas.getBoundingClientRect();
+    const width = box.width;
+    const height = box.height;
+
+    if(!width || !height) return;
+
+    const ratio = window.devicePixelRatio || 1;
+
+    btcCanvas.width = Math.round(width * ratio);
+    btcCanvas.height = Math.round(height * ratio);
+
+    const ctx = btcCanvas.getContext('2d');
+    if(!ctx) return;
+
+    ctx.setTransform(ratio,0,0,ratio,0,0);
+    ctx.fillStyle = '#fdfdfa';
+    ctx.fillRect(0,0,width,height);
+    ctx.font = '10px system-ui';
+
+    if(!btcCandles.length){
+      ctx.fillStyle = '#85857d';
+      ctx.textAlign = 'center';
+      ctx.fillText(
+        '비트코인 차트 데이터를 기다리고 있습니다.',
+        width/2,height/2
+      );
+      return;
+    }
+
+    const left = 6;
+    const right = width < 450 ? 84 : 96;
+    const top = 16;
+    const bottom = 28;
+    const plotWidth = width - left - right;
+    const plotHeight = height - top - bottom;
+
+    if(plotWidth <= 0 || plotHeight <= 0) return;
+
+    let low = Math.min(...btcCandles.map(c=>c.low));
+    let high = Math.max(...btcCandles.map(c=>c.high));
+
+    const padding = (high-low)*0.06 || high*0.01 || 1;
+    low -= padding;
+    high += padding;
+
+    const y = value =>
+      top + (high-value)/(high-low)*plotHeight;
+
+    for(let i=0;i<=4;i++){
+      const value = high-(high-low)*i/4;
+      const yy = y(value);
+
+      ctx.strokeStyle = '#e4e4dc';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(left,yy);
+      ctx.lineTo(left+plotWidth,yy);
+      ctx.stroke();
+
+      ctx.fillStyle = '#77776f';
+      ctx.textAlign = 'left';
+      ctx.fillText(price(value),left+plotWidth+5,yy+3);
+    }
+
+    const step = plotWidth/btcCandles.length;
+    const bodyWidth = Math.max(0.45,step*0.7);
+
+    btcCandles.forEach((c,index)=>{
+      const x = left+(index+0.5)*step;
+      const color = c.close>=c.open ? '#087e60' : '#b5262e';
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = Math.min(1,Math.max(0.4,step*0.5));
+
+      ctx.beginPath();
+      ctx.moveTo(x,y(c.high));
+      ctx.lineTo(x,y(c.low));
+      ctx.stroke();
+
+      ctx.fillRect(
+        x-bodyWidth/2,
+        y(Math.max(c.open,c.close)),
+        bodyWidth,
+        Math.max(1,Math.abs(y(c.open)-y(c.close)))
+      );
+    });
+
+    ctx.fillStyle = '#77776f';
+
+    for(let i=0;i<3;i++){
+      const index = Math.round((btcCandles.length-1)*i/2);
+      const x =
+        left+index/Math.max(1,btcCandles.length-1)*plotWidth;
+
+      ctx.textAlign = i===0 ? 'left' : i===2 ? 'right' : 'center';
+
+      ctx.fillText(
+        new Date(btcCandles[index].time).toISOString().slice(0,10),
+        x,
+        height-7
+      );
+    }
+  }
+
+  /* ---------- BTC 독립 기간 버튼 ---------- */
+
+  btcPanel.querySelectorAll('[data-btc-mode]').forEach(button=>{
+    button.addEventListener('click',()=>{
+      btcMode = button.dataset.btcMode;
+
+      btcPanel.querySelectorAll('[data-btc-mode]').forEach(item=>{
+        const active = item === button;
+        item.classList.toggle('active',active);
+        item.setAttribute('aria-pressed',String(active));
+      });
+
+      refreshFixedBTCChart(true);
+    });
+  });
+
+  /* ---------- 화면 크기 및 새로고침 ---------- */
+
+  if('ResizeObserver' in window){
+    const observer = new ResizeObserver(drawFixedBTCChart);
+    observer.observe(btcCanvas.parentElement);
+  }else{
+    window.addEventListener('resize',drawFixedBTCChart);
+  }
+
+  document.getElementById('refresh').addEventListener('click',()=>{
+    refreshFixedBTCPrice();
+    refreshFixedBTCChart(false);
+  });
+
+  document.addEventListener('visibilitychange',()=>{
+    if(!document.hidden){
+      refreshFixedBTCPrice();
+      refreshFixedBTCChart(false);
+    }
+  });
+
+  /* ---------- 시작 및 자동 갱신 ---------- */
+
+  refreshFixedBTCPrice();
+  refreshFixedBTCChart(true);
+
+  setInterval(()=>{
+    if(!document.hidden) refreshFixedBTCPrice();
+  },30000);
+
+  setInterval(()=>{
+    if(!document.hidden) refreshFixedBTCChart(false);
+  },60000);
+})();
+                 </script>
 </body>
 </html>
