@@ -1849,24 +1849,26 @@ if(positionSnapshot){
     '진행 중인 봉을 제외하고 기술지표를 계산합니다.';
 
   try{
-    const timeData=await requestJSON(BINANCE+'/fapi/v1/time');
-    const now=Number(timeData.serverTime);
-    if(!Number.isFinite(now)||now<=0) throw new Error('거래소 기준시각을 확인하지 못했습니다.');
+const timeData = await requestJSON(BINANCE + '/fapi/v1/time');
+    const now = Number(timeData.serverTime);
 
-    
-    // BTC 수집 실패 시 분석을 진행하지 않는다.
-const btc = await collectAnalysis('BTCUSDT', now);
-const collected = [btc];
-let additionalError = '';
+    if(!Number.isFinite(now) || now <= 0){
+      throw new Error('거래소 기준시각을 확인하지 못했습니다.');
+    }
 
-if(selected !== 'BTCUSDT'){
-  try{
-    collected.push(await collectAnalysis(selected, now));
-  }catch(e){
-    additionalError =
-      shortName(selected) + ' 추가 분석 불가: ' + e.message;
-  }
-}
+    // BTC 수집은 한 번만 실행한다.
+    const btc = await collectAnalysis('BTCUSDT', now);
+    const collected = [btc];
+    let additionalError = '';
+
+    if(selected !== 'BTCUSDT'){
+      try{
+        collected.push(await collectAnalysis(selected, now));
+      }catch(e){
+        additionalError =
+          shortName(selected) + ' 추가 분석 불가: ' + e.message;
+      }
+    }    
 
 // 포지션 평가는 모든 코인의 차트 수집이 끝난 다음 실행한다.
 let positionContext = null;
