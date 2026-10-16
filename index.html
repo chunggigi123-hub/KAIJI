@@ -1473,7 +1473,194 @@ function relativeComparison(btc,alt){
 }
 
 /* ---------- AI 기술 분석 ---------- */
+/* ---------- 보유 포지션 스냅샷 ---------- */
 
+function readPositionSnapshot(symbol){
+  // 사용자의 정의:
+  // BTC는 시장 기준이고, 추가 선택 코인이 실제 보유 포지션.
+  if(symbol === 'BTCUSDT') return null;
+
+  const read = id => {
+    const value = $(id).value.trim();
+    return value === '' ? NaN : Number(value);
+  };
+
+  const margin = read('margin');
+  const leverage = read('leverage');
+  const entry = read('entry');
+  const target = read('exit');
+  const feeInPercent = read('feeIn');
+  const feeOutPercent = read('feeOut');
+  const maintenanceMarginPercent = read('mmr');
+
+  const stopText = $('stopLoss').value.trim();
+  const stop = stopText === '' ? null : Number(stopText);
+
+  const required = [
+    margin, leverage, entry, target,
+    feeInPercent, feeOutPercent, maintenanceMarginPercent
+  ];
+
+  if(
+    !required.every(Number.isFinite) ||
+    margin <= 0 || entry <= 0 || target <= 0 ||
+    !Number.isInteger(leverage) || leverage < 1 || leverage > 125 ||
+    feeInPercent < 0 || feeInPercent > 1 ||
+    feeOutPercent < 0 || feeOutPercent > 1 ||
+    maintenanceMarginPercent < 0 || maintenanceMarginPercent > 10 ||
+    (stop !== null && (!Number.isFinite(stop) || stop <= 0))
+  ){
+    throw new Error('포지션 분석에 사용할 가격·증거금·레버리지·수수료를 확인하세요.');
+  }
+
+  if(maintenanceMarginPercent / 100 >= 1 / leverage){
+    throw new Error('유지증거금률이 초기 증거금 비율 이상입니다. 가정값을 수정하세요.');
+  }
+
+  const entryNotional = margin * leverage;
+  const quantity = entryNotional / entry;
+
+  if(!Number.isFinite(entryNotional) || !Number.isFinite(quantity) ||
+     quantity <= 0){
+    throw new Error('포지션 금액 또는 수량을 계산할 수 없습니다.');
+  }
+
+  return {
+    symbol,
+    side: side === 1 ? 'LONG' : 'SHORT',
+    direction: side,
+    marginUSDT: margin,
+    leverage,
+    entryPrice: entry,
+    userTargetPrice: target,
+    userStopPrice: stop,
+    feeInPercent,
+    feeOutPercent,
+    maintenanceMarginPercent,
+    entryNotionalUSDT: entryNotional,
+    estimatedQuantity: quantity,
+    horizonDays: {min:7, max:30},
+    capturedAtUTC: new Date().toISOString()
+  };
+}
+
+async function buildPositionContext(p){
+  // 시세 캐시 대신 새 마크가격을 조회한다.
+  const quote = await requestJSON(
+    BINANCE + '/fapi/v1/premiumIndex?symbol=' +
+    encodeURIComponent(p.symbol)
+  );
+
+  const mark = Number(quote.markPrice);
+  const markTime = Number(quote.time);
+
+  if(
+    !Number.isFinite(mark) || mark <= 0 ||
+    !Number.isFinite(markTime) ||
+    Math.abs(Date.now() - markTime) > 120000
+  ){
+    throw new Error(
+      '포지션 평가용 최신 마크가격을 확인하지 못했습니다. 기기 시각과 연결을 확인하세요.'
+    );
+  }
+
+  const m = p.maintenanceMarginPercent / 100;
+  const rawLiquidation = p.direction === 1
+    ? p.entryPrice * (1 - 1 / p.leverage) / (1 - m)
+    : p.entryPrice * (1 + 1 / p.leverage) / (1 + m);
+
+  const liquidation = rawLiquidation > 0 ? rawLiquidation : null;
+
+  const beyondLiquidation = value =>
+    liquidation !== null &&
+    (p.direction === 1
+      ? value <= liquidation
+      : value >= liquidation);
+
+  function evaluateExit(value){
+    if(value === null) return null;
+
+    const gross =
+      p.direction * p.estimatedQuantity * (value - p.entryPrice);
+
+    const fees =
+      p.entryNotionalUSDT * p.feeInPercent / 100 +
+      p.estimatedQuantity * value * p.feeOutPercent / 100;
+
+    const net = gross - fees;
+
+    const incrementalGross =
+      p.direction * p.estimatedQuantity * (value - mark);
+
+    if(![gross, fees, net, incrementalGross].every(Number.isFinite)){
+      throw new Error('ポジション損益の計算範囲を超えました。');
+    }
+
+    return {
+      exitPrice: value,
+      grossPnlSinceEntryUSDT: gross,
+      estimatedEntryAndExitFeesUSDT: fees,
+      estimatedNetPnlSinceEntryUSDT: net,
+      estimatedNetReturnOnInputMarginPercent:
+        net / p.marginUSDT * 100,
+      grossPnlChangeFromMarkUSDT: incrementalGross,
+      atOrBeyondEstimatedLiquidation: beyondLiquidation(value),
+      assumption:
+        '清算されず、この価格で全数量を決済できた場合の仮定計算。'
+    };
+  }
+
+  const warnings = [
+    '数量は入力証拠金×レバレッジ÷エントリー価格から推定。実口座照会ではない。',
+    'マーク価格は評価基準であり、約定可能な価格を保証しない。',
+    '資金調達料、スリッページ、追加証拠金、部分決済、クロス残高は未反映。',
+    '清算価格は一定維持証拠金率による概算。取引所の実際の清算価格ではない。'
+  ];
+
+  if(beyondLiquidation(mark)){
+    warnings.push(
+      '現在のマーク価格が概算清算域にある。入力と実際のポジションが一致するか確認が必要。'
+    );
+  }
+
+  if(
+    p.userStopPrice !== null &&
+    (p.direction === 1
+      ? mark <= p.userStopPrice
+      : mark >= p.userStopPrice)
+  ){
+    warnings.push('入力された損切り価格をマーク価格がすでに通過している。');
+  }
+
+  if(p.direction * (p.userTargetPrice - mark) <= 0){
+    warnings.push(
+      '入力目標価格は現在のマーク価格より有利な方向ではない。目標の意味を再確認する。'
+    );
+  }
+
+  return {
+    ...p,
+    markPrice: mark,
+    markPriceTimeUTC: new Date(markTime).toISOString(),
+    estimatedLiquidationPrice: liquidation,
+
+    adverseMoveToEstimatedLiquidationPercent: liquidation === null
+      ? null
+      : p.direction * (mark - liquidation) / mark * 100,
+
+    valuationAtMark: evaluateExit(mark),
+    userTargetEvaluation: evaluateExit(p.userTargetPrice),
+    userStopEvaluation: evaluateExit(p.userStopPrice),
+
+    missingInformation: [
+      '総資産・許容損失額',
+      '実際の保有数量・取引所表示の清算価格',
+      '資金調達料の将来推移',
+      '他の保有ポジション'
+    ],
+    warnings
+  };
+}
 const INSTRUCTIONS=`
 너는 한국어 암호화폐 기술 분석 도우미다.
 제공된 OHLCV와 계산된 기술지표만 분석한다.
