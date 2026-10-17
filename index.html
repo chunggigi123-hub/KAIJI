@@ -4115,6 +4115,9 @@ const states = new Map();
 const candleCache = new Map();
 const candleLoads = new Map();
 
+// REST 요청 이후 들어온 스트림 업데이트를 구분한다.
+let candleUpdateSequence = 0;
+
 let lockedSymbols = [];
 let desiredStreamKey = '';
 let ws = null;
