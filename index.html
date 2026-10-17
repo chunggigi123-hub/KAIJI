@@ -1615,7 +1615,8 @@ async function requestAI(key,model,payload){
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
       body:JSON.stringify({
         model,store:false,max_output_tokens:6500,
-        instructions:AI_INSTRUCTIONS,input:JSON.stringify(payload)
+        instructions:AI_INSTRUCTIONS + '\n\n' + KAIJI_INSTRUCTIONS,
+input:JSON.stringify(payload)
       })
     });
     let data;
