@@ -2716,6 +2716,124 @@ window.addEventListener('pageshow',e=>{
 window.addEventListener('beforeunload',e=>{
   if(dirty){e.preventDefault();e.returnValue=''}
 });
+  /* ===== 분석 기록 원본 백업 · 구조 확인 ===== */
+(function addAnalysisRecoveryTools(){
+  const panel=$('analysisHistoryPanel');
+  if(!panel) return;
+
+  const box=document.createElement('div');
+  box.className='notice';
+
+  const title=document.createElement('strong');
+  title.textContent='분석 기록 복구 준비';
+
+  const description=document.createElement('p');
+  description.textContent=
+    '기존 저장값을 수정하지 않고 원본을 백업하고 형식을 확인합니다.';
+
+  const backup=document.createElement('button');
+  backup.textContent='읽기 실패한 원본 JSON 다운로드';
+
+  const inspect=document.createElement('button');
+  inspect.textContent='저장 구조 확인';
+
+  const buttons=document.createElement('div');
+  buttons.className='row wrap';
+  buttons.style.justifyContent='flex-start';
+  buttons.append(backup,inspect);
+
+  const output=document.createElement('pre');
+  output.className='pre';
+  output.style.userSelect='text';
+
+  backup.onclick=()=>{
+    try{
+      const raw=localStorage.getItem(ANALYSIS_STORAGE_KEY);
+
+      if(raw===null){
+        output.textContent='현재 주소의 저장소에 분석 원본이 없습니다.';
+        return;
+      }
+
+      // 파싱하거나 변환하지 않고 저장된 문자열 그대로 백업합니다.
+      const blob=new Blob([raw],{
+        type:'application/json;charset=utf-8'
+      });
+
+      const url=URL.createObjectURL(blob);
+      const link=document.createElement('a');
+
+      link.href=url;
+      link.download='kaiji-analysis-original-'+Date.now()+'.json';
+
+      document.body.append(link);
+      link.click();
+      link.remove();
+
+      setTimeout(()=>URL.revokeObjectURL(url),30000);
+
+      output.textContent=
+        '원본 다운로드를 요청했습니다. 다운로드된 파일을 확인하세요.\n'+
+        '파일에는 분석 내용과 포지션 정보가 포함될 수 있습니다.';
+    }catch(error){
+      output.textContent='원본 백업 실패: '+error.message;
+    }
+  };
+
+  inspect.onclick=()=>{
+    try{
+      const raw=localStorage.getItem(ANALYSIS_STORAGE_KEY);
+
+      if(raw===null){
+        output.textContent='현재 주소의 저장소에 분석 원본이 없습니다.';
+        return;
+      }
+
+      const data=JSON.parse(raw);
+      const type=value=>
+        value===null?'null':
+        Array.isArray(value)?'배열':typeof value;
+
+      const lines=[
+        '저장 키: '+ANALYSIS_STORAGE_KEY,
+        '문자 수: '+raw.length,
+        '최상위 형식: '+type(data)
+      ];
+
+      function describeArray(label,array){
+        lines.push(label+' 항목 수: '+array.length);
+
+        const first=array[0];
+        if(first&&typeof first==='object'&&!Array.isArray(first)){
+          lines.push(
+            label+' 첫 항목의 필드: '+Object.keys(first).join(', ')
+          );
+        }else if(array.length){
+          lines.push(label+' 첫 항목 형식: '+type(first));
+        }
+      }
+
+      if(Array.isArray(data)){
+        describeArray('최상위 배열',data);
+      }else if(data&&typeof data==='object'){
+        lines.push('최상위 필드: '+Object.keys(data).join(', '));
+        lines.push('version 값: '+JSON.stringify(data.version));
+
+        for(const [key,value] of Object.entries(data)){
+          lines.push(key+' 형식: '+type(value));
+          if(Array.isArray(value)) describeArray(key,value);
+        }
+      }
+
+      output.textContent=lines.join('\n');
+    }catch(error){
+      output.textContent='구조 확인 실패: '+error.message;
+    }
+  };
+
+  box.append(title,description,buttons,output);
+  panel.append(box);
+})();
 </script>
 </body>
 </html>
