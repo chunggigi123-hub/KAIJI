@@ -683,10 +683,18 @@ function persist(next){
 
 function renderStorage(){
   $('storageStatus').textContent=storageNotice||
-    '보유 포지션·관심 목록만 이 브라우저에 저장합니다. 분석 기록과 API 키는 저장하지 않습니다.';
+    '보유 포지션·종료 내역·관심 목록을 이 브라우저에 저장합니다. 분석 기록과 API 키는 저장하지 않습니다.';
+
   $('storageStatus').classList.toggle('risk',!storageWritable);
+
+  const hasPosition=!!app.positions[selected];
+
   $('savePosition').disabled=!storageWritable;
-  $('clearPosition').disabled=!storageWritable||!app.positions[selected];
+  $('clearPosition').disabled=!storageWritable||!hasPosition;
+  $('closePosition').disabled=!storageWritable||!hasPosition;
+  $('exitPrice').disabled=!storageWritable||!hasPosition;
+
+  renderClosePreview();
 }
 
 window.addEventListener('storage',e=>{
