@@ -364,8 +364,56 @@ footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
         목표·손절 가격의 계산 손익은 청산 전에 전량 체결된다는 가정입니다.
       </div>
 
-      <button id="backupPositions" style="margin-top:12px">보유 설정 JSON 백업</button>
+            <button id="backupPositions" style="margin-top:12px">
+        보유 설정 · 종료 내역 JSON 백업
+      </button>
     </div>
+  </div>
+
+  <div style="border-top:1px solid var(--line);margin-top:22px;padding-top:20px">
+    <div class="head wrap">
+      <h3 style="margin:0">종료 포지션 · 누적 손익</h3>
+      <span id="closedTradeCount" class="badge">종료 0건</span>
+    </div>
+
+    <p class="tiny muted">
+      모든 코인의 종료 기록 합계입니다.
+      현재 보유 중인 포지션의 평가손익은 합산하지 않습니다.
+    </p>
+
+    <div class="metrics">
+      <div class="metric">
+        <span>누적 이익 · 순이익 거래 합계</span>
+        <strong id="closedProfit" class="positive">0.00 USDT</strong>
+      </div>
+
+      <div class="metric">
+        <span>누적 손실 · 순손실 거래 합계</span>
+        <strong id="closedLoss" class="negative">0.00 USDT</strong>
+      </div>
+
+      <div class="metric">
+        <span>진입·종료 수수료 합계 · 순손익에 반영됨</span>
+        <strong id="closedFees">0.00 USDT</strong>
+      </div>
+
+      <div class="metric">
+        <span>누적 순손익 · 이익 + 손실</span>
+        <strong id="closedNet">0.00 USDT</strong>
+      </div>
+    </div>
+
+    <div class="notice">
+      종료 가격과 저장된 수량·수수료율로 계산한 기록입니다.
+      누적 펀딩비와 실제 수수료 차이는 반영하지 않습니다.
+      수량을 입력하지 않은 포지션은 증거금 기반 추정 수량을 사용합니다.
+      부분 종료는 지원하지 않습니다.
+    </div>
+
+    <details open>
+      <summary>종료 내역 보기</summary>
+      <div id="closedTradeList" class="stack"></div>
+    </details>
   </div>
 </section>
 
