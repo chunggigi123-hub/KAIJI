@@ -531,7 +531,7 @@ function readStorage(){
     if(raw!==null){
       const v=JSON.parse(raw);
       if(!validateApp(v)) throw new Error('저장된 보유 설정 형식을 읽을 수 없습니다.');
-      app=v;
+      app={...v,closedTrades:v.closedTrades??[]};
     }else{
       // 기존 관심 목록은 가능한 경우 가져온다.
       try{
