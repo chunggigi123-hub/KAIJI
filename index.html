@@ -5511,7 +5511,23 @@ async function evaluateScenario(s,analysisId,asOf){
     }
 
     if(priceOK && btcOK){
-      trigger=c;
+      const alreadyAtTarget = s.direction === 'LONG'
+        ? c.close >= s.targetPrice
+        : c.close <= s.targetPrice;
+
+      if(alreadyAtTarget){
+        return {
+          ...base,
+          status: 'MISSED_ENTRY',
+          eventAt: c.closeTime,
+          note:
+            '최초 발동 조건을 확인한 종가가 이미 목표 가격에 ' +
+            '도달했거나 넘어섰습니다. 신규 발동으로 인정하지 않으며, ' +
+            '성공·실패 또는 실제 손익으로 집계하지 않습니다.'
+        };
+      }
+
+      trigger = c;
       break;
     }
   }
