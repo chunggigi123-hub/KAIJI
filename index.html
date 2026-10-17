@@ -487,8 +487,42 @@ function validateApp(v){
     v.coins.length>15||!v.coins.every(validSymbol)||
     !v.coins.includes(v.selected)||!v.positions||typeof v.positions!=='object'||
     Array.isArray(v.positions)) return false;
-  return Object.entries(v.positions).every(([s,p])=>
+
+  const positionsOK=Object.entries(v.positions).every(([s,p])=>
     validSymbol(s)&&p.symbol===s&&validatePosition(p));
+
+  if(!positionsOK) return false;
+
+  // 기존 저장 데이터에 종료 내역이 없어도 정상으로 읽는다.
+  if(v.closedTrades===undefined) return true;
+  if(!Array.isArray(v.closedTrades)) return false;
+
+  const ids=new Set();
+
+  for(const trade of v.closedTrades){
+    if(!trade||
+      typeof trade.id!=='string'||!trade.id||
+      ids.has(trade.id)||
+      !validatePosition(trade.position)||
+      !finite(trade.exitPrice)||trade.exitPrice<=0||
+      !finite(trade.closedAt)||trade.closedAt<=0) return false;
+
+    ids.add(trade.id);
+
+    try{
+      calculateClosedTrade(trade.position,trade.exitPrice);
+    }catch{
+      return false;
+    }
+  }
+
+  try{
+    summarizeClosedTrades(v.closedTrades);
+  }catch{
+    return false;
+  }
+
+  return true;
 }
 
 function readStorage(){
