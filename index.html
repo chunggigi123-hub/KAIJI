@@ -5062,12 +5062,14 @@ function repaint(){
 
     drawSharedChart(el('kaijiBTCChart'),'BTCUSDT',btcMode);
 
-    safeText(el('chartStatus'),
-      '공용 캐시 · 스트림 반영 · 진행 봉 포함'
+    safeText(
+      el('chartStatus'),
+      chartStatusText(currentCoin, chartMode)
     );
 
-    safeText(el('kaijiBTCChartStatus'),
-      'BTC 공용 캐시 · 스트림 반영 · 진행 봉 포함'
+    safeText(
+      el('kaijiBTCChartStatus'),
+      'BTC · ' + chartStatusText('BTCUSDT', btcMode)
     );
   }
 
