@@ -4966,7 +4966,48 @@ function drawSharedChart(canvas,symbol,mode){
     );
   }
 }
+function chartStatusText(symbol, mode){
+const interval = mode === 'h90' ? '4h' : '1d';
+const cache = candleCache.get(symbol + '|' + interval);
 
+if(!cache?.rows?.length){
+return '차트 데이터 없음 · 연결 상태를 확인하세요';
+}
+
+const now = Date.now();
+
+const wsFresh =
+socketOpen &&
+now - lastSocketMessageAt < 15000 &&
+now - cache.lastEventAt < 15000;
+
+const restFresh =
+now - cache.fetchedAt < 60000;
+
+if(wsFresh){
+return '스트림 수신 중 · 진행 봉 포함';
+}
+
+if(restFresh){
+return '최근 REST 조회 데이터 · 실시간 스트림 미확인';
+}
+
+const lastUpdatedAt = Math.max(
+cache.lastEventAt || 0,
+cache.fetchedAt || 0
+);
+
+const ageSeconds = Math.max(
+0,
+Math.floor((now - lastUpdatedAt) / 1000)
+);
+
+return (
+'오래된 차트 · 마지막 갱신 약 ' +
+ageSeconds +
+'초 전 · 최신 데이터 수신을 확인하세요'
+);
+                              }
 function repaint(){
   if(document.hidden) return;
 
