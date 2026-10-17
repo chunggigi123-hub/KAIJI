@@ -6620,7 +6620,7 @@ el('analyze').onclick=async()=>{
     el('kv2Usage').textContent=usageText(response.usage,model);
     el('kv2Usage').style.whiteSpace='pre-wrap';
 
-    await dbSaveAnalysis(completedRecord,review.evaluations);
+    await dbSaveAnalysis(completedRecord, []);
     await reloadHistory(completedRecord.id);
 
     el('kv2DBStatus').textContent=
