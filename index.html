@@ -6811,13 +6811,22 @@ window.KaijiLiveV2 = Object.freeze({
 });
 
 })().catch(error=>{
-  console.error('카이지 v2 초기화 실패:',error);
+  console.error('카이지 v2 초기화 실패:', error);
 
-  const node=document.getElementById('aiError');
+  const button = document.getElementById('analyze');
+
+  if(button){
+    button.onclick = null;
+    button.disabled = true;
+    button.textContent = '초기화 실패 · 새로고침 필요';
+  }
+
+  const node = document.getElementById('aiError');
+
   if(node){
-    node.textContent=
-      '실시간 통합 기능 초기화 실패: '+
-      (error instanceof Error?error.message:String(error));
+    node.textContent =
+      '실시간 통합 기능 초기화 실패: ' +
+      (error instanceof Error ? error.message : String(error));
   }
 });
 </script>
