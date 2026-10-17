@@ -2157,9 +2157,10 @@ readStorage();
 renderStorage();
 buildCoins();
 loadPositionForm();
+renderClosedTrades();
 render();
 ensureSockets();
-scheduleRefresh(true);
+scheduleRefresh(true);;
 
 setInterval(()=>{
   if(!document.hidden) scheduleRefresh(false);
