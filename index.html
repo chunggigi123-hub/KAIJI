@@ -3458,5 +3458,3089 @@ window.addEventListener('pageshow',()=>{
   render();
 })();
 </script>
+<!-- =========================================================
+ 카이지 실시간 종합 분석 · 구조화 복기 통합 패치 v2
+ 기존 모든 script 다음, </body> 바로 앞에 추가
+========================================================== -->
+<script>
+(async function(){
+'use strict';
+
+if(window.__KAIJI_LIVE_V2__) return;
+window.__KAIJI_LIVE_V2__ = true;
+
+/* =========================================================
+ 0. 설정
+========================================================= */
+
+const CFG = {
+  REST: 'https://fapi.binance.com',
+
+  // 연결 실패 시 Binance 공식 USDⓈ-M 문서에서
+  // 현재 지원되는 WebSocket 주소/스트림 경로를 확인하세요.
+  WS: 'wss://fstream.binance.com/stream?streams=',
+
+  DEFAULT_MODEL: 'gpt-4.1-mini',
+  MAX_OUTPUT_TOKENS: 4500,
+
+  OI_POLL_MS: 15000,
+  OI_STALE_MS: 45000,
+  MARK_STALE_MS: 10000,
+
+  DB_NAME: 'kaiji-live-analysis-v2',
+  DB_VERSION: 1,
+
+  // 최신 공식 요금표 확인 후 직접 입력할 수 있습니다.
+  // 단위: USD / 100만 토큰.
+  // null이면 비용을 추측하지 않고 토큰 수만 표시합니다.
+  PRICES: {
+    'gpt-4.1-mini': null,
+    'gpt-4.1': null
+    // 예시 형식:
+    // '모델명': { input: 숫자, cachedInput: 숫자, output: 숫자 }
+  }
+};
+
+const el = id => document.getElementById(id);
+const HOUR = 3600000;
+const FOUR_HOURS = 4 * HOUR;
+const ONE_DAY = 24 * HOUR;
+const TF_MS = { '1m':60000, '4h':FOUR_HOURS, '1d':ONE_DAY };
+
+const needed = [
+  'report','reportMeta','analyze','apiKey','chart',
+  'analysisTarget','marketStatus'
+];
+
+if(needed.some(id => !el(id))){
+  console.error('카이지 v2: 기존 HTML 구성 요소가 없습니다.');
+  return;
+}
+
+const requiredFunctions = [
+  typeof fetchCandles,
+  typeof loadTicker,
+  typeof indicators,
+  typeof periodSummary,
+  typeof swingPoints,
+  typeof relativeComparison,
+  typeof readPositionSnapshot
+];
+
+if(requiredFunctions.some(x => x !== 'function')){
+  console.error('카이지 v2: 기존 분석기 함수가 없습니다.');
+  return;
+}
+
+const uuid = () =>
+  window.crypto?.randomUUID?.() ||
+  Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const finite = x => typeof x === 'number' && Number.isFinite(x);
+
+const round = (x, digits=6) =>
+  finite(x) ? Number(x.toPrecision(digits)) : null;
+
+const iso = t => finite(t) ? new Date(t).toISOString() : null;
+
+const timeText = t =>
+  finite(t) ? new Date(t).toLocaleString('ko-KR') : '—';
+
+function safeText(node, text){
+  if(node) node.textContent = text;
+}
+
+function pct(x, digits=2){
+  return finite(x)
+    ? (x > 0 ? '+' : '') + x.toFixed(digits) + '%'
+    : '수집 중';
+}
+
+function moneyShort(x){
+  if(!finite(x)) return '—';
+  const abs = Math.abs(x);
+  if(abs >= 1e9) return (x/1e9).toFixed(2) + 'B';
+  if(abs >= 1e6) return (x/1e6).toFixed(2) + 'M';
+  if(abs >= 1e3) return (x/1e3).toFixed(1) + 'K';
+  return x.toFixed(2);
+}
+
+function errorText(e){
+  return e instanceof Error ? e.message : String(e);
+}
+
+/* =========================================================
+ 1. 기존 텍스트 자동 저장 감지 분리
+    과거 기록은 그대로 조회 가능.
+    새 기록은 아래의 명시적 IndexedDB 저장을 사용.
+========================================================= */
+
+{
+  const oldReport = el('report');
+  const replacement = oldReport.cloneNode(true);
+  oldReport.replaceWith(replacement);
+
+  // 기존 MutationObserver는 이전 노드에 남아 있으므로
+  // v2 리포트를 중복 저장하지 않습니다.
+}
+
+/* =========================================================
+ 2. UI
+========================================================= */
+
+const style = document.createElement('style');
+style.textContent = `
+  .kv2-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:12px;
+  }
+  .kv2-card{
+    min-width:0;
+    border:1px solid var(--line);
+    border-radius:9px;
+    padding:14px;
+    background:#fcfcfa;
+  }
+  .kv2-card h3{margin:0 0 9px;font-size:15px}
+  .kv2-lines{
+    white-space:pre-wrap;
+    overflow-wrap:anywhere;
+    font-size:12px;
+    line-height:1.9;
+  }
+  .kv2-select{
+    width:100%;
+    min-height:44px;
+    padding:8px;
+    border:1px solid var(--line);
+    border-radius:7px;
+    background:white;
+    color:var(--ink);
+    font:inherit;
+    font-size:13px;
+  }
+  .kv2-state{
+    margin-top:10px;
+    padding:10px;
+    border-radius:7px;
+    background:var(--soft);
+    font-size:11px;
+    white-space:pre-wrap;
+  }
+  .kv2-actions{
+    display:flex;gap:8px;flex-wrap:wrap;margin:10px 0;
+  }
+  #kv2HistoryText{
+    white-space:pre-wrap;overflow-wrap:anywhere;
+    font-size:13px;line-height:1.9;
+  }
+  @media(max-width:800px){
+    .kv2-grid{grid-template-columns:1fr}
+  }
+`;
+document.head.append(style);
+
+const aiPanel = document.querySelector('section.ai');
+
+const livePanel = document.createElement('section');
+livePanel.className = 'panel';
+livePanel.id = 'kv2LivePanel';
+livePanel.style.marginTop = '15px';
+livePanel.innerHTML = `
+  <div class="section-head">
+    <h2>실시간 수급 · 거래 행동 심리</h2>
+    <span id="kv2FeedBadge" class="badge">연결 준비</span>
+  </div>
+
+  <div class="kv2-grid">
+    <div class="kv2-card">
+      <h3>BTC · 시장 기준</h3>
+      <div id="kv2BTCFlow" class="kv2-lines">수집 준비 중</div>
+    </div>
+    <div class="kv2-card" id="kv2AltCard">
+      <h3 id="kv2AltTitle">선택 코인</h3>
+      <div id="kv2AltFlow" class="kv2-lines">수집 준비 중</div>
+    </div>
+  </div>
+
+  <div id="kv2FeedStatus" class="kv2-state"></div>
+
+  <div class="notice">
+    현재 OI는 15초 조회, 체결·마크가격은 스트림을 우선 사용합니다.
+    5분·15분 변화는 해당 기간을 실제로 관측한 뒤 표시합니다.<br>
+    체결 수급과 심리 해석의 범위는 Binance USDⓈ-M 해당 계약입니다.
+    전체 거래소 통합 심리나 자금 유입액이 아닙니다.<br>
+    페이지 종료·절전·연결 공백 이후에는 집계를 다시 시작할 수 있습니다.
+  </div>
+`;
+aiPanel.before(livePanel);
+
+const optionsBox = document.createElement('div');
+optionsBox.innerHTML = `
+  <label for="kv2Model">분석 모델</label>
+  <select id="kv2Model" class="kv2-select">
+    <option value="gpt-4.1-mini">gpt-4.1-mini · 기본</option>
+    <option value="gpt-4.1">gpt-4.1 · 선택</option>
+  </select>
+
+  <label for="kv2PositionSource">포지션 분석 기준</label>
+  <select id="kv2PositionSource" class="kv2-select">
+    <option value="none">포지션 없이 시장만 분석</option>
+    <option value="calculator">현재 계산기 입력값</option>
+    <option value="journal">거래 기록장의 진행 포지션</option>
+  </select>
+
+  <p class="tiny muted">
+    등록 포지션 선택 시 코인이 일치해야 합니다.
+    목표·손절·유지증거금률은 계산기 입력값을 함께 확인합니다.
+  </p>
+`;
+el('analyze').before(optionsBox);
+el('kv2Model').value = CFG.DEFAULT_MODEL;
+
+const usageNode = document.createElement('div');
+usageNode.id = 'kv2Usage';
+usageNode.className = 'notice';
+usageNode.textContent = '실시간 데이터 갱신은 OpenAI를 호출하지 않습니다.';
+el('aiError').after(usageNode);
+
+const aiBadge = aiPanel.querySelector('.section-head .badge');
+safeText(aiBadge, '차트 · 실시간 수급 · 복기');
+
+const methodNotice = [...aiPanel.querySelectorAll('.notice')]
+  .find(node => node.textContent.includes('분석 방식'));
+
+if(methodNotice){
+  methodNotice.replaceChildren();
+  methodNotice.textContent =
+    '분석 방식\n' +
+    '• BTC를 먼저 분석하고 선택 코인을 별도로 분석\n' +
+    '• 완료 일봉·4시간봉으로 구조 판단\n' +
+    '• 현재 마크가격·OI·체결·펀딩으로 현재 상태 확인\n' +
+    '• 이전의 구조화 계획을 코드로 검증한 뒤 수정 이유 작성\n' +
+    '• 뉴스·SNS·일별 공포탐욕지수·유료 청산맵 제외';
+  methodNotice.style.whiteSpace = 'pre-wrap';
+}
+
+const historyPanel = document.createElement('section');
+historyPanel.className = 'panel';
+historyPanel.id = 'kv2History';
+historyPanel.style.marginTop = '15px';
+historyPanel.innerHTML = `
+  <div class="section-head">
+    <h2>종합 분석 기록 · 자동 복기 v2</h2>
+    <span id="kv2HistoryCount" class="badge">0개</span>
+  </div>
+
+  <p class="small muted">
+    분석 당시 근거·구조화 계획·자동 판정을 함께 저장합니다.
+    이전 텍스트 기록은 기존 기록장에서 조회할 수 있습니다.
+  </p>
+
+  <select id="kv2HistorySelect" class="kv2-select"></select>
+
+  <div class="kv2-actions">
+    <button id="kv2Backup" type="button" class="preset">
+      구조화 기록 JSON 백업
+    </button>
+    <button id="kv2Delete" type="button" class="preset">
+      선택 분석 삭제
+    </button>
+  </div>
+
+  <p id="kv2DBStatus" class="tiny muted"></p>
+
+  <details>
+    <summary>선택 기록·최근 판정 보기</summary>
+    <div class="report" style="margin-top:10px;min-height:180px">
+      <div id="kv2HistoryText"></div>
+    </div>
+  </details>
+
+  <div class="notice">
+    목표·무효화 판정은 분석 이후 완료된 4시간봉으로 검증합니다.
+    장중 도달은 봉 마감 후 확인되며, 한 봉에서 둘 다 도달하면
+    순서를 추측하지 않고 '판정 불가'로 처리합니다.<br>
+    이는 실제 체결·실제 수익 평가가 아닙니다.
+    실시간 손절 감시나 자동 주문 기능도 아닙니다.
+  </div>
+`;
+aiPanel.after(historyPanel);
+
+/* =========================================================
+ 3. IndexedDB
+========================================================= */
+
+let db = null;
+let dbError = '';
+let savedAnalyses = [];
+let latestEvaluations = new Map();
+
+function openDB(){
+  return new Promise((resolve,reject)=>{
+    const req = indexedDB.open(CFG.DB_NAME, CFG.DB_VERSION);
+
+    req.onupgradeneeded = ()=>{
+      const d = req.result;
+
+      if(!d.objectStoreNames.contains('analyses')){
+        d.createObjectStore('analyses',{keyPath:'id'});
+      }
+
+      if(!d.objectStoreNames.contains('evaluations')){
+        d.createObjectStore('evaluations',{keyPath:'scenarioId'});
+      }
+    };
+
+    req.onsuccess = ()=>resolve(req.result);
+    req.onerror = ()=>reject(req.error || new Error('IndexedDB 열기 실패'));
+    req.onblocked = ()=>reject(new Error(
+      '다른 탭이 기록 DB 업데이트를 막고 있습니다. 다른 탭을 닫아주세요.'
+    ));
+  });
+}
+
+function dbAll(store){
+  return new Promise((resolve,reject)=>{
+    if(!db) return reject(new Error('기록 저장소를 사용할 수 없습니다.'));
+
+    const tx = db.transaction(store,'readonly');
+    const req = tx.objectStore(store).getAll();
+    let rows = [];
+
+    req.onsuccess = ()=>{ rows = req.result || []; };
+    tx.oncomplete = ()=>resolve(rows);
+    tx.onerror = ()=>reject(tx.error || req.error);
+    tx.onabort = ()=>reject(tx.error || new Error('DB 읽기 중단'));
+  });
+}
+
+function dbSaveAnalysis(record, evaluations){
+  return new Promise((resolve,reject)=>{
+    const tx = db.transaction(['analyses','evaluations'],'readwrite');
+
+    // 분석 원본은 덮어쓰지 않고 add.
+    tx.objectStore('analyses').add(record);
+
+    for(const item of evaluations){
+      tx.objectStore('evaluations').put(item);
+    }
+
+    tx.oncomplete = ()=>resolve();
+    tx.onerror = ()=>reject(tx.error || new Error('기록 저장 실패'));
+    tx.onabort = ()=>reject(tx.error || new Error('기록 저장 중단'));
+  });
+}
+
+async function reloadHistory(preferredId){
+  if(!db) return;
+
+  const [analyses,evaluations] = await Promise.all([
+    dbAll('analyses'),
+    dbAll('evaluations')
+  ]);
+
+  savedAnalyses = analyses.sort((a,b)=>b.createdAt-a.createdAt);
+  latestEvaluations = new Map(evaluations.map(x=>[x.scenarioId,x]));
+
+  const select = el('kv2HistorySelect');
+  const previous = preferredId || select.value;
+  select.replaceChildren();
+
+  for(const item of savedAnalyses){
+    const option = document.createElement('option');
+    option.value = item.id;
+    option.textContent =
+      timeText(item.createdAt) + ' · ' +
+      item.symbols.map(shortName).join(' + ');
+    select.append(option);
+  }
+
+  if(!savedAnalyses.length){
+    const option = document.createElement('option');
+    option.value = '';
+    option.textContent = '저장된 v2 분석이 없습니다';
+    select.append(option);
+  }else{
+    select.value = savedAnalyses.some(x=>x.id===previous)
+      ? previous
+      : savedAnalyses[0].id;
+  }
+
+  el('kv2HistoryCount').textContent = savedAnalyses.length + '개';
+  select.disabled = !savedAnalyses.length;
+  el('kv2Backup').disabled = !savedAnalyses.length;
+  el('kv2Delete').disabled = !savedAnalyses.length;
+
+  showHistory();
+}
+
+const STATUS_LABELS = {
+  NOT_TRIGGERED: '조건 미발동',
+  ACTIVE: '발동 후 관찰 중',
+  TARGET_REACHED: '목표 조건 도달',
+  INVALIDATED: '무효화 조건 도달',
+  EXPIRED: '평가 기한 종료',
+  AMBIGUOUS: '같은 봉에서 양쪽 도달 · 순서 판정 불가',
+  INSUFFICIENT_DATA: '데이터 부족',
+  PENDING: '아직 다음 분석에서 평가하지 않음'
+};
+
+function evalText(e){
+  if(!e) return STATUS_LABELS.PENDING;
+  return (
+    STATUS_LABELS[e.status] +
+    (e.triggeredAt ? '\n발동 확인: '+timeText(e.triggeredAt) : '') +
+    (e.eventAt ? '\n결과 확인 봉 마감: '+timeText(e.eventAt) : '') +
+    (e.note ? '\n'+e.note : '')
+  );
+}
+
+function showHistory(){
+  const record = savedAnalyses.find(x=>x.id===el('kv2HistorySelect').value);
+
+  if(!record){
+    el('kv2HistoryText').textContent = '저장된 분석이 없습니다.';
+    return;
+  }
+
+  const checks = (record.scenarios || []).map(s=>{
+    const ev = latestEvaluations.get(s.id);
+    return (
+      shortName(s.symbol)+' '+s.direction+
+      ' · '+(s.role==='preferred'?'우선 관찰':'대안')+'\n'+
+      '4시간봉 종가 조건: '+s.triggerPrice+'\n'+
+      '목표 터치: '+s.targetPrice+
+      ' / 무효화 터치: '+s.invalidationPrice+'\n'+
+      evalText(ev)
+    );
+  });
+
+  el('kv2HistoryText').textContent =
+    record.reportText +
+    (checks.length ? '\n\n[저장된 계획의 최근 자동 판정]\n\n'+checks.join('\n\n') : '');
+}
+
+el('kv2HistorySelect').onchange = showHistory;
+
+el('kv2Backup').onclick = async()=>{
+  try{
+    const [analyses,evaluations] = await Promise.all([
+      dbAll('analyses'),dbAll('evaluations')
+    ]);
+
+    const backup = {
+      type:'kaiji-analysis-v2-backup',
+      version:2,
+      exportedAt:new Date().toISOString(),
+      analyses,
+      evaluations
+    };
+
+    const blob = new Blob(
+      [JSON.stringify(backup,null,2)],
+      {type:'application/json;charset=utf-8'}
+    );
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download =
+      '카이지-v2-구조화기록-'+new Date().toISOString().slice(0,10)+'.json';
+
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }catch(e){
+    el('kv2DBStatus').textContent = '백업 실패: '+errorText(e);
+  }
+};
+
+el('kv2Delete').onclick = async()=>{
+  const id = el('kv2HistorySelect').value;
+  const record = savedAnalyses.find(x=>x.id===id);
+  if(!record) return;
+
+  if(!confirm(
+    '이 v2 분석과 연결된 자동 판정을 삭제할까요?\n'+
+    '기존 텍스트 기록장과 거래 기록장은 변경하지 않습니다.'
+  )) return;
+
+  try{
+    await new Promise((resolve,reject)=>{
+      const tx = db.transaction(['analyses','evaluations'],'readwrite');
+      tx.objectStore('analyses').delete(id);
+
+      for(const s of record.scenarios || []){
+        tx.objectStore('evaluations').delete(s.id);
+      }
+
+      tx.oncomplete = resolve;
+      tx.onerror = ()=>reject(tx.error);
+      tx.onabort = ()=>reject(tx.error);
+    });
+
+    await reloadHistory();
+  }catch(e){
+    el('kv2DBStatus').textContent = '삭제 실패: '+errorText(e);
+  }
+};
+
+try{
+  db = await openDB();
+  db.onversionchange = ()=>{
+    db.close();
+    db = null;
+    dbError = '다른 탭에서 저장소가 변경되었습니다. 페이지를 새로고침하세요.';
+    el('kv2DBStatus').textContent = dbError;
+  };
+
+  await reloadHistory();
+
+  el('kv2DBStatus').textContent =
+    'IndexedDB 준비 완료 · API 키는 기록에 저장하지 않습니다.';
+}catch(e){
+  dbError = errorText(e);
+  el('kv2DBStatus').textContent =
+    '저장소 오류: '+dbError+
+    ' · 기록 없는 분석이 누적되지 않도록 AI 실행을 중지합니다.';
+}
+
+/* =========================================================
+ 4. 시장 데이터 REST 및 시각 보정
+========================================================= */
+
+let serverOffset = 0;
+let timeSyncAt = 0;
+let restBlockedUntil = 0;
+let lastFeedError = '';
+let marketRequestCount = 0;
+
+const inflight = new Map();
+
+function marketNow(){
+  return Date.now()+serverOffset;
+}
+
+async function marketJSON(path, timeout=18000){
+  if(Date.now() < restBlockedUntil){
+    throw new Error('거래소 요청 제한 대기 중입니다.');
+  }
+
+  const url = CFG.REST+path;
+
+  if(inflight.has(url)) return inflight.get(url);
+
+  const work = (async()=>{
+    const controller = new AbortController();
+    const timer = setTimeout(()=>controller.abort(),timeout);
+
+    try{
+      marketRequestCount++;
+
+      const response = await fetch(url,{
+        signal:controller.signal,
+        credentials:'omit',
+        referrerPolicy:'no-referrer'
+      });
+
+      if(response.status===429 || response.status===418){
+        const retry = response.headers.get('Retry-After');
+        let wait = 60000;
+
+        if(retry){
+          const seconds = Number(retry);
+          if(Number.isFinite(seconds)){
+            wait = Math.max(1000,seconds*1000);
+          }else{
+            const date = Date.parse(retry);
+            if(Number.isFinite(date)) wait = Math.max(1000,date-Date.now());
+          }
+        }
+
+        restBlockedUntil = Date.now()+wait;
+        throw new Error(
+          'Binance 요청 제한: '+Math.ceil(wait/1000)+'초 대기합니다.'
+        );
+      }
+
+      if(!response.ok){
+        throw new Error('Binance HTTP '+response.status+
+          ' · 서비스 상태·접근 정책·지역 제한을 확인하세요.');
+      }
+
+      return await response.json();
+    }catch(e){
+      if(e.name==='AbortError') throw new Error('시장 데이터 응답 시간 초과');
+      if(e instanceof TypeError){
+        throw new Error('시장 데이터 연결 실패 · 인터넷/CORS/지역 제한 확인');
+      }
+      throw e;
+    }finally{
+      clearTimeout(timer);
+    }
+  })();
+
+  inflight.set(url,work);
+
+  try{
+    return await work;
+  }finally{
+    inflight.delete(url);
+  }
+}
+
+async function syncTime(){
+  const t0 = Date.now();
+  const data = await marketJSON('/fapi/v1/time');
+  const t1 = Date.now();
+  const value = Number(data.serverTime);
+
+  if(!finite(value)) throw new Error('거래소 기준시각 형식 오류');
+
+  serverOffset = value - (t0+t1)/2;
+  timeSyncAt = Date.now();
+}
+
+/* =========================================================
+ 5. 공용 시장 데이터 저장소
+========================================================= */
+
+const states = new Map();
+const candleCache = new Map();
+const candleLoads = new Map();
+
+let lockedSymbols = [];
+let desiredStreamKey = '';
+let ws = null;
+let socketGeneration = 0;
+let reconnectTimer = null;
+let reconnectAttempt = 0;
+let socketOpen = false;
+let lastSocketMessageAt = 0;
+let lastPaintAt = 0;
+let suspended = false;
+
+function stateFor(symbol){
+  if(!states.has(symbol)){
+    states.set(symbol,{
+      symbol,
+      mark:null,
+      oi:[],
+      buckets:new Map(),
+      flowStart:null,
+      lastTradeId:null,
+      lastTradeTime:null,
+      flowGap:false,
+      oiBusy:false,
+      premiumFetchedAt:0
+    });
+  }
+  return states.get(symbol);
+}
+
+function trackedSymbols(){
+  return [...new Set(['BTCUSDT',currentCoin,...lockedSymbols])];
+}
+
+function resetFlow(symbol, gap=true){
+  const s = stateFor(symbol);
+  s.buckets.clear();
+  s.flowStart = marketNow();
+  s.lastTradeId = null;
+  s.lastTradeTime = null;
+  s.flowGap = gap;
+}
+
+function setPremium(symbol, data, source){
+  const s = stateFor(symbol);
+
+  const mark = Number(data.markPrice ?? data.p);
+  const index = Number(data.indexPrice ?? data.i);
+  const funding = Number(data.lastFundingRate ?? data.r);
+  const nextFunding = Number(data.nextFundingTime ?? data.T);
+  const eventTime = Number(data.time ?? data.E);
+
+  if(
+    !finite(mark) || mark<=0 ||
+    !finite(index) || index<=0 ||
+    !finite(eventTime)
+  ) return;
+
+  if(s.mark && eventTime < s.mark.eventTime) return;
+
+  s.mark = {
+    price:mark,
+    indexPrice:index,
+    fundingRate:finite(funding)?funding:null,
+    nextFundingTime:finite(nextFunding)?nextFunding:null,
+    eventTime,
+    receivedAt:Date.now(),
+    source
+  };
+}
+
+async function refreshPremium(symbol){
+  const data = await marketJSON(
+    '/fapi/v1/premiumIndex?symbol='+encodeURIComponent(symbol)
+  );
+
+  setPremium(symbol,data,'REST-current-snapshot');
+  stateFor(symbol).premiumFetchedAt = Date.now();
+
+  if(!stateFor(symbol).mark){
+    throw new Error(symbol+' 마크가격 형식 오류');
+  }
+
+  return stateFor(symbol).mark;
+}
+
+async function refreshOI(symbol){
+  const s = stateFor(symbol);
+  if(s.oiBusy) return;
+
+  s.oiBusy = true;
+
+  try{
+    const data = await marketJSON(
+      '/fapi/v1/openInterest?symbol='+encodeURIComponent(symbol)
+    );
+
+    const value = Number(data.openInterest);
+    const eventTime = Number(data.time);
+
+    if(!finite(value) || value<0 || !finite(eventTime)){
+      throw new Error(symbol+' 현재 OI 형식 오류');
+    }
+
+    if(Math.abs(marketNow()-eventTime)>CFG.OI_STALE_MS){
+      throw new Error(symbol+' 현재 OI 응답이 오래되었습니다.');
+    }
+
+    const last = s.oi.at(-1);
+
+    if(!last || eventTime>last.time){
+      s.oi.push({
+        time:eventTime,
+        receivedAt:Date.now(),
+        value
+      });
+    }
+
+    const cutoff = marketNow()-35*60000;
+    s.oi = s.oi.filter(x=>x.time>=cutoff);
+  }catch(e){
+    lastFeedError = errorText(e);
+  }finally{
+    s.oiBusy = false;
+  }
+}
+
+function parseCandles(rows){
+  if(!Array.isArray(rows) || !rows.length){
+    throw new Error('캔들 데이터가 없습니다.');
+  }
+
+  const result = rows.map(r=>({
+    time:Number(r[0]),
+    open:Number(r[1]),
+    high:Number(r[2]),
+    low:Number(r[3]),
+    close:Number(r[4]),
+    volume:Number(r[5]),
+    closeTime:Number(r[6])
+  }));
+
+  if(!result.every(c=>
+    Object.values(c).every(finite) &&
+    c.open>0 && c.high>0 && c.low>0 && c.close>0 &&
+    c.volume>=0 &&
+    c.high>=Math.max(c.open,c.close,c.low) &&
+    c.low<=Math.min(c.open,c.close)
+  )){
+    throw new Error('캔들 데이터 형식 오류');
+  }
+
+  return result.sort((a,b)=>a.time-b.time);
+}
+
+async function ensureCandles(symbol, interval){
+  const key = symbol+'|'+interval;
+  const cached = candleCache.get(key);
+
+  const live = cached &&
+    Date.now()-cached.lastEventAt<15000;
+
+  const recentlyFetched = cached &&
+    Date.now()-cached.fetchedAt<55000;
+
+  if(cached && (live || recentlyFetched)) return cached.rows;
+  if(candleLoads.has(key)) return candleLoads.get(key);
+
+  const work = (async()=>{
+    const limit = interval==='4h'?650:400;
+
+    const rows = parseCandles(await marketJSON(
+      '/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+
+      '&interval='+interval+'&limit='+limit
+    ));
+
+    // REST 요청 중 받은 더 최신 스트림 봉을 보존.
+    const current = candleCache.get(key);
+    const merged = new Map(rows.map(c=>[c.time,c]));
+
+    if(current){
+      for(const c of current.rows){
+        if(c.time>=rows.at(-1).time) merged.set(c.time,c);
+      }
+    }
+
+    const all = [...merged.values()]
+      .sort((a,b)=>a.time-b.time)
+      .slice(-limit);
+
+    candleCache.set(key,{
+      rows:all,
+      fetchedAt:Date.now(),
+      lastEventAt:current?.lastEventAt || 0
+    });
+
+    return all;
+  })();
+
+  candleLoads.set(key,work);
+
+  try{
+    return await work;
+  }finally{
+    candleLoads.delete(key);
+  }
+}
+
+function updateKline(symbol,k){
+  const interval = k.i;
+  if(!['4h','1d'].includes(interval)) return;
+
+  const c = {
+    time:Number(k.t),
+    open:Number(k.o),
+    high:Number(k.h),
+    low:Number(k.l),
+    close:Number(k.c),
+    volume:Number(k.v),
+    closeTime:Number(k.T)
+  };
+
+  if(
+    !Object.values(c).every(finite) ||
+    c.open<=0 || c.high<=0 || c.low<=0 || c.close<=0 ||
+    c.volume<0 ||
+    c.high<Math.max(c.open,c.close,c.low) ||
+    c.low>Math.min(c.open,c.close)
+  ) return;
+
+  const key = symbol+'|'+interval;
+  const cache = candleCache.get(key);
+  if(!cache) return;
+
+  const rows = cache.rows;
+  const last = rows.at(-1);
+
+  if(last && c.time===last.time){
+    rows[rows.length-1] = c;
+  }else if(!last || c.time>last.time){
+    // 중간 봉 공백은 REST로 복구하도록 캐시를 만료시킨다.
+    if(last && c.time-last.time>TF_MS[interval]){
+      cache.fetchedAt = 0;
+      cache.lastEventAt = 0;
+      ensureCandles(symbol,interval).catch(e=>{
+        lastFeedError=errorText(e);
+      });
+      return;
+    }
+    rows.push(c);
+  }else{
+    return;
+  }
+
+  if(rows.length>(interval==='4h'?650:400)) rows.shift();
+  cache.lastEventAt = Date.now();
+}
+
+/* 기존 차트·고정 BTC 차트 모두 공용 캐시 사용 */
+fetchCandles = async function(symbol,interval,limit,endTime){
+  if(['1d','4h'].includes(interval) && !endTime){
+    const rows = await ensureCandles(symbol,interval);
+    return rows.slice(-limit).map(c=>({...c}));
+  }
+
+  let path =
+    '/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+
+    '&interval='+encodeURIComponent(interval)+
+    '&limit='+Math.min(1000,limit);
+
+  if(endTime) path += '&endTime='+Math.floor(endTime);
+
+  return parseCandles(await marketJSON(path));
+};
+
+/* 기존 관심 목록·고정 BTC 시세 조회도 공용 캐시 사용 */
+loadTicker = async function(symbol){
+  const old = tickers.get(symbol);
+
+  if(old && Date.now()-old.receivedAt<55000) return old;
+
+  const data = await marketJSON(
+    '/fapi/v1/ticker/24hr?symbol='+encodeURIComponent(symbol)
+  );
+
+  const value = {
+    symbol,
+    price:Number(data.lastPrice),
+    change:Number(data.priceChangePercent),
+    time:Number(data.closeTime),
+    receivedAt:Date.now()
+  };
+
+  if(
+    ![value.price,value.change,value.time].every(finite) ||
+    value.price<=0
+  ){
+    throw new Error(symbol+' 시세 형식 오류');
+  }
+
+  tickers.set(symbol,value);
+  return value;
+};
+
+/* =========================================================
+ 6. 체결 집계 · OI 변화
+========================================================= */
+
+function handleTrade(symbol,d){
+  const s = stateFor(symbol);
+
+  const id = Number(d.a);
+  const t = Number(d.T);
+  const p = Number(d.p);
+  const q = Number(d.q);
+
+  if(
+    ![id,t,p,q].every(finite) || p<=0 || q<0 ||
+    typeof d.m!=='boolean'
+  ) return;
+
+  if(s.lastTradeId!==null && id<=s.lastTradeId) return;
+
+  if(s.lastTradeId!==null && id>s.lastTradeId+1){
+    // 누락을 0거래량으로 채우지 않는다.
+    resetFlow(symbol,true);
+  }
+
+  s.lastTradeId = id;
+  s.lastTradeTime = t;
+
+  if(s.flowStart===null) s.flowStart=t;
+
+  const second = Math.floor(t/1000)*1000;
+  const b = s.buckets.get(second) || {buy:0,sell:0};
+
+  const amount = p*q;
+
+  if(d.m) b.sell+=amount;
+  else b.buy+=amount;
+
+  s.buckets.set(second,b);
+
+  const cutoff = marketNow()-16*60000;
+  for(const key of s.buckets.keys()){
+    if(key<cutoff) s.buckets.delete(key);
+  }
+}
+
+function flowWindow(symbol, minutes, asOf=marketNow()){
+  const s = stateFor(symbol);
+  const duration = minutes*60000;
+  const start = asOf-duration;
+
+  let buy=0,sell=0;
+
+  for(const [t,b] of s.buckets){
+    if(t>=start && t<=asOf){
+      buy+=b.buy;
+      sell+=b.sell;
+    }
+  }
+
+  const coverage = s.flowStart===null
+    ? 0
+    : Math.max(0,Math.min(1,(asOf-s.flowStart)/duration));
+
+  const connected =
+    socketOpen &&
+    Date.now()-lastSocketMessageAt<15000 &&
+    trackedSymbols().includes(symbol);
+
+  const complete = connected && coverage>=1;
+  const total = buy+sell;
+
+  return {
+    windowMinutes:minutes,
+    status:complete?'fresh':connected?'warming':'stale',
+    coverage:round(coverage,4),
+    buyQuoteObserved:round(buy),
+    sellQuoteObserved:round(sell),
+
+    // 完整 구간이 아니면 분석용 비율·델타는 null.
+    takerBuyShare:complete && total>0 ? round(buy/total) : null,
+    deltaQuote:complete ? round(buy-sell) : null,
+
+    observedDeltaQuote:round(buy-sell),
+    noObservedTrades:complete && total===0,
+    observedSince:iso(s.flowStart)
+  };
+}
+
+function oiWindow(symbol, minutes, asOf=marketNow()){
+  const rows = stateFor(symbol).oi.filter(x=>x.time<=asOf);
+  const last = rows.at(-1);
+
+  if(!last){
+    return {windowMinutes:minutes,status:'missing',changePercent:null};
+  }
+
+  if(asOf-last.time>CFG.OI_STALE_MS){
+    return {windowMinutes:minutes,status:'stale',changePercent:null};
+  }
+
+  const target = asOf-minutes*60000;
+  const before = rows.filter(x=>x.time<=target).at(-1);
+
+  if(!before || target-before.time>30000){
+    return {windowMinutes:minutes,status:'warming',changePercent:null};
+  }
+
+  const path = rows.filter(x=>x.time>=before.time);
+
+  const hasGap = path.some((x,i)=>
+    i>0 && x.time-path[i-1].time>CFG.OI_STALE_MS
+  );
+
+  if(hasGap){
+    return {
+      windowMinutes:minutes,
+      status:'missing',
+      changePercent:null,
+      note:'구간 중 조회 공백'
+    };
+  }
+
+  return {
+    windowMinutes:minutes,
+    status:'fresh',
+    actualWindowSeconds:round((last.time-before.time)/1000),
+    changePercent:before.value>0
+      ? round((last.value/before.value-1)*100)
+      : null
+  };
+}
+
+function liveSnapshot(symbol, asOf=marketNow()){
+  const s = stateFor(symbol);
+  const m = s.mark;
+  const oi = s.oi.filter(x=>x.time<=asOf).at(-1);
+
+  const markFresh =
+    m &&
+    Math.abs(asOf-m.eventTime)<=CFG.MARK_STALE_MS &&
+    Date.now()-m.receivedAt<=CFG.MARK_STALE_MS;
+
+  const oiFresh = oi && asOf-oi.time<=CFG.OI_STALE_MS;
+
+  return {
+    symbol,
+    source:'Binance USDⓈ-M perpetual',
+    asOf:iso(asOf),
+
+    mark: {
+      status:m?(markFresh?'fresh':'stale'):'missing',
+      price:m?round(m.price):null,
+      indexPrice:m?round(m.indexPrice):null,
+      eventTime:m?iso(m.eventTime):null,
+
+      fundingRate:m?m.fundingRate:null,
+      fundingRateNote:
+        '현재 피드 제공 값. 다음 회차 확정 펀딩률이나 향후 고정 비용으로 해석 금지.',
+
+      nextFundingTime:m?iso(m.nextFundingTime):null,
+
+      markIndexPremiumBps:m
+        ? round((m.price/m.indexPrice-1)*10000)
+        : null
+    },
+
+    oi:{
+      status:oi?(oiFresh?'fresh':'stale'):'missing',
+      quantity:oi?round(oi.value):null,
+      eventTime:oi?iso(oi.time):null,
+      oneMinute:oiWindow(symbol,1,asOf),
+      fiveMinutes:oiWindow(symbol,5,asOf),
+      fifteenMinutes:oiWindow(symbol,15,asOf),
+      note:'현재 OI 수량. OI 증감만으로 신규 롱·숏 비중 확정 불가.'
+    },
+
+    flow:{
+      oneMinute:flowWindow(symbol,1,asOf),
+      fiveMinutes:flowWindow(symbol,5,asOf),
+      fifteenMinutes:flowWindow(symbol,15,asOf),
+      note:'해당 거래소 계약에서 관측한 공격적 체결대금. 전체 시장 순유입액 아님.'
+    }
+  };
+}
+
+/* =========================================================
+ 7. WebSocket 연결
+========================================================= */
+
+function buildStreamNames(){
+  const allTickers = [...new Set([
+    ...symbols,'BTCUSDT',currentCoin,...lockedSymbols
+  ])];
+
+  const list = allTickers.map(s=>s.toLowerCase()+'@ticker');
+
+  for(const symbol of trackedSymbols()){
+    const lower=symbol.toLowerCase();
+    list.push(
+      lower+'@markPrice@1s',
+      lower+'@aggTrade',
+      lower+'@kline_4h',
+      lower+'@kline_1d'
+    );
+  }
+
+  return [...new Set(list)].sort();
+}
+
+function stopSocket(){
+  socketGeneration++;
+  clearTimeout(reconnectTimer);
+  reconnectTimer = null;
+  socketOpen = false;
+
+  const old=ws;
+  ws=null;
+
+  if(old){
+    old.onopen=null;
+    old.onmessage=null;
+    old.onclose=null;
+    old.onerror=null;
+    try{old.close();}catch{}
+  }
+}
+
+function connectSocket(){
+  if(suspended) return;
+
+  const names=buildStreamNames();
+  desiredStreamKey=names.join('/');
+
+  stopSocket();
+
+  const generation=socketGeneration;
+
+  for(const symbol of trackedSymbols()) resetFlow(symbol,true);
+
+  try{
+    ws=new WebSocket(CFG.WS+desiredStreamKey);
+  }catch(e){
+    lastFeedError='WebSocket 생성 실패: '+errorText(e);
+    scheduleReconnect(generation);
+    return;
+  }
+
+  ws.onopen=()=>{
+    if(generation!==socketGeneration) return;
+
+    socketOpen=true;
+    lastSocketMessageAt=Date.now();
+    reconnectAttempt=0;
+    lastFeedError='';
+
+    for(const symbol of trackedSymbols()){
+      resetFlow(symbol,false);
+
+      for(const interval of ['1d','4h']){
+        const cache=candleCache.get(symbol+'|'+interval);
+        if(cache){
+          cache.fetchedAt=0;
+          cache.lastEventAt=0;
+        }
+
+        ensureCandles(symbol,interval).catch(e=>{
+          lastFeedError=errorText(e);
+        });
+      }
+    };
+  };
+
+  ws.onmessage=event=>{
+    if(generation!==socketGeneration) return;
+    lastSocketMessageAt=Date.now();
+
+    let wrapper;
+    try{wrapper=JSON.parse(event.data);}catch{return;}
+
+    const d=wrapper.data || wrapper;
+    const symbol=d.s;
+
+    if(typeof symbol!=='string') return;
+
+    if(d.e==='24hrTicker'){
+      const p=Number(d.c);
+      const change=Number(d.P);
+      const t=Number(d.E);
+
+      if([p,change,t].every(finite) && p>0){
+        tickers.set(symbol,{
+          symbol,price:p,change,time:t,receivedAt:Date.now()
+        });
+      }
+    }else if(d.e==='markPriceUpdate'){
+      setPremium(symbol,d,'WebSocket');
+    }else if(d.e==='aggTrade'){
+      handleTrade(symbol,d);
+    }else if(d.e==='kline' && d.k){
+      updateKline(symbol,d.k);
+    }
+  };
+
+  ws.onerror=()=>{
+    if(generation!==socketGeneration) return;
+    lastFeedError=
+      'WebSocket 연결 오류 · 공식 스트림 주소/인터넷/지역 제한을 확인하세요.';
+  };
+
+  ws.onclose=()=>{
+    if(generation!==socketGeneration) return;
+    socketOpen=false;
+
+    for(const symbol of trackedSymbols()) resetFlow(symbol,true);
+
+    scheduleReconnect(generation);
+  };
+}
+
+function scheduleReconnect(generation){
+  if(suspended || generation!==socketGeneration) return;
+
+  clearTimeout(reconnectTimer);
+
+  const delay=Math.min(30000,1000*2**Math.min(reconnectAttempt++,5))+
+    Math.floor(Math.random()*700);
+
+  reconnectTimer=setTimeout(()=>{
+    if(!suspended && generation===socketGeneration) connectSocket();
+  },delay);
+}
+
+async function primeSymbol(symbol){
+  stateFor(symbol);
+
+  const results=await Promise.allSettled([
+    ensureCandles(symbol,'1d'),
+    ensureCandles(symbol,'4h'),
+    refreshPremium(symbol),
+    refreshOI(symbol),
+    loadTicker(symbol)
+  ]);
+
+  const rejected=results.find(x=>x.status==='rejected');
+  if(rejected) lastFeedError=errorText(rejected.reason);
+}
+
+/* =========================================================
+ 8. 실시간 화면 및 공용 차트 그리기
+========================================================= */
+
+function flowPanelText(symbol){
+  const snap=liveSnapshot(symbol);
+  const m=snap.mark;
+  const oi=snap.oi;
+  const f=snap.flow.fiveMinutes;
+
+  const buyText=f.takerBuyShare===null
+    ? '수집 중 / 데이터 미충족'
+    : (f.takerBuyShare*100).toFixed(1)+'%';
+
+  const fundingText=finite(m.fundingRate)
+    ? (m.fundingRate*100).toFixed(5)+'%'
+    : '—';
+
+  return [
+    '마크가격: '+(m.price?price(m.price)+' USDT':'—')+
+      ' ['+m.status+']',
+
+    '마크 기준: '+(m.eventTime
+      ? new Date(m.eventTime).toLocaleTimeString('ko-KR')
+      : '—'),
+
+    '현재 OI 수량: '+(oi.quantity!==null
+      ? Number(oi.quantity).toLocaleString('en-US')
+      : '—')+' ['+oi.status+']',
+
+    'OI 5분 변화: '+pct(oi.fiveMinutes.changePercent),
+    'OI 15분 변화: '+pct(oi.fifteenMinutes.changePercent),
+
+    '피드 제공 펀딩률: '+fundingText,
+    '다음 펀딩 시각: '+(m.nextFundingTime
+      ? new Date(m.nextFundingTime).toLocaleString('ko-KR')
+      : '—'),
+
+    '마크/지수 괴리: '+(finite(m.markIndexPremiumBps)
+      ? m.markIndexPremiumBps.toFixed(2)+' bps'
+      : '—'),
+
+    '5분 공격적 매수 비중: '+buyText,
+    '5분 체결 델타: '+(finite(f.deltaQuote)
+      ? moneyShort(f.deltaQuote)+' USDT'
+      : '수집 중'),
+
+    '5분 관측 커버리지: '+Math.round((f.coverage||0)*100)+'%',
+    '체결 상태: '+f.status
+  ].join('\n');
+}
+
+function drawSharedChart(canvas,symbol,mode){
+  if(!canvas) return;
+
+  const interval=mode==='h90'?'4h':'1d';
+  const cache=candleCache.get(symbol+'|'+interval);
+  if(!cache?.rows?.length) return;
+
+  const now=marketNow();
+  const cutoff=mode==='y1'?yearStart(now):now-90*ONE_DAY;
+  const data=cache.rows.filter(c=>c.closeTime>=cutoff);
+
+  const box=canvas.getBoundingClientRect();
+  const w=box.width,h=box.height;
+  if(!w || !h || !data.length) return;
+
+  const dpr=window.devicePixelRatio||1;
+  canvas.width=Math.round(w*dpr);
+  canvas.height=Math.round(h*dpr);
+
+  const ctx=canvas.getContext('2d');
+  if(!ctx) return;
+
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  ctx.fillStyle='#fdfdfa';
+  ctx.fillRect(0,0,w,h);
+  ctx.font='10px system-ui';
+
+  const left=6,right=w<450?84:96,top=16,bottom=28;
+  const pw=w-left-right,ph=h-top-bottom;
+  if(pw<=0 || ph<=0) return;
+
+  let low=Math.min(...data.map(c=>c.low));
+  let high=Math.max(...data.map(c=>c.high));
+  const padding=(high-low)*.06 || high*.01 || 1;
+  low-=padding; high+=padding;
+
+  const y=v=>top+(high-v)/(high-low)*ph;
+
+  for(let i=0;i<=4;i++){
+    const value=high-(high-low)*i/4;
+    const yy=y(value);
+
+    ctx.strokeStyle='#e4e4dc';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(left,yy);
+    ctx.lineTo(left+pw,yy);
+    ctx.stroke();
+
+    ctx.fillStyle='#77776f';
+    ctx.textAlign='left';
+    ctx.fillText(price(value),left+pw+5,yy+3);
+  }
+
+  const step=pw/data.length;
+  const bw=Math.max(.45,step*.7);
+
+  data.forEach((c,i)=>{
+    const x=left+(i+.5)*step;
+    ctx.strokeStyle=ctx.fillStyle=
+      c.close>=c.open?'#087e60':'#b5262e';
+
+    ctx.lineWidth=Math.min(1,Math.max(.4,step*.5));
+    ctx.beginPath();
+    ctx.moveTo(x,y(c.high));
+    ctx.lineTo(x,y(c.low));
+    ctx.stroke();
+
+    ctx.fillRect(
+      x-bw/2,y(Math.max(c.open,c.close)),bw,
+      Math.max(1,Math.abs(y(c.open)-y(c.close)))
+    );
+  });
+
+  for(let i=0;i<3;i++){
+    const index=Math.round((data.length-1)*i/2);
+    const x=left+index/Math.max(1,data.length-1)*pw;
+    ctx.fillStyle='#77776f';
+    ctx.textAlign=i===0?'left':i===2?'right':'center';
+    ctx.fillText(
+      new Date(data[index].time).toISOString().slice(0,10),
+      x,h-7
+    );
+  }
+}
+
+function repaint(){
+  if(document.hidden) return;
+
+  renderMarket();
+
+  safeText(el('kv2BTCFlow'),flowPanelText('BTCUSDT'));
+
+  const additional=currentCoin!=='BTCUSDT';
+  el('kv2AltCard').hidden=!additional;
+
+  if(additional){
+    safeText(el('kv2AltTitle'),shortName(currentCoin)+' · 선택 코인');
+    safeText(el('kv2AltFlow'),flowPanelText(currentCoin));
+  }
+
+  const connected=socketOpen &&
+    Date.now()-lastSocketMessageAt<15000;
+
+  safeText(el('kv2FeedBadge'),connected?'스트림 연결':'연결 대기 / 제한');
+
+  safeText(el('kv2FeedStatus'),
+    '거래소 기준: '+timeText(marketNow())+'\n'+
+    '수집 대상: '+trackedSymbols().map(shortName).join(' + ')+'\n'+
+    '실시간 스트림: '+(connected?'정상 수신':'연결 확인 필요')+'\n'+
+    'OI: 15초 현재값 조회 · AI: 버튼 실행 시에만 호출'+
+    (lastFeedError?'\n최근 데이터 알림: '+lastFeedError:'')
+  );
+
+  safeText(el('marketStatus'),
+    '스트림 우선 · 연결 공백 시 REST 복구 · '+
+    new Date().toLocaleTimeString('ko-KR')
+  );
+
+  const btcTicker=tickers.get('BTCUSDT');
+
+  if(btcTicker && el('kaijiBTCPrice')){
+    safeText(el('kaijiBTCPrice'),price(btcTicker.price)+' USDT');
+    safeText(el('kaijiBTCChange'),
+      signed(btcTicker.change)+'% · 24h · '+
+      new Date(btcTicker.time).toLocaleTimeString('ko-KR')
+    );
+    paint(el('kaijiBTCChange'),btcTicker.change);
+  }
+
+  if(Date.now()-lastPaintAt>=1500){
+    lastPaintAt=Date.now();
+
+    drawSharedChart(el('chart'),currentCoin,chartMode);
+
+    const btcModeButton=document.querySelector('[data-btc-mode].active');
+    const btcMode=btcModeButton?.dataset.btcMode || 'd90';
+
+    drawSharedChart(el('kaijiBTCChart'),'BTCUSDT',btcMode);
+
+    safeText(el('chartStatus'),
+      '공용 캐시 · 스트림 반영 · 진행 봉 포함'
+    );
+
+    safeText(el('kaijiBTCChartStatus'),
+      'BTC 공용 캐시 · 스트림 반영 · 진행 봉 포함'
+    );
+  }
+
+  if(!aiBusy){
+    el('analyze').textContent=currentCoin==='BTCUSDT'
+      ? 'BTC 종합 분석 · 이전 계획 검증'
+      : 'BTC + '+shortName(currentCoin)+' 종합 분석 · 복기';
+  }
+}
+
+/* =========================================================
+ 9. 분석용 차트 요약
+========================================================= */
+
+function validCompletedSeries(rows, interval, asOf){
+  const width=TF_MS[interval];
+  const closed=rows.filter(c=>c.closeTime<asOf);
+  const expectedClose=Math.floor(asOf/width)*width-1;
+
+  if(!closed.length) throw new Error(interval+' 완료 봉이 없습니다.');
+
+  if(closed.at(-1).closeTime<expectedClose){
+    throw new Error(interval+
+      ' 최신 완료 봉이 아직 없습니다. 봉 마감 직후라면 잠시 후 다시 실행하세요.');
+  }
+
+  for(let i=1;i<closed.length;i++){
+    if(closed[i].time-closed[i-1].time!==width){
+      throw new Error(interval+' 캔들 중간 공백이 있습니다.');
+    }
+  }
+
+  return closed;
+}
+
+function supportResistance(daily,h4,reference){
+  const candidates=[
+    ...swingPoints(daily.slice(-90)).map(x=>({
+      price:x.price,
+      source:'확인된 일봉 스윙 '+x.type+' '+x.date
+    })),
+    {
+      price:indicators(daily).SMA50,
+      source:'일봉 SMA50'
+    },
+    {
+      price:indicators(h4).EMA20,
+      source:'4시간봉 EMA20'
+    },
+    {
+      price:Math.max(...h4.slice(-20).map(c=>c.high)),
+      source:'최근 완료 20개 4시간봉 고점'
+    },
+    {
+      price:Math.min(...h4.slice(-20).map(c=>c.low)),
+      source:'최근 완료 20개 4시간봉 저점'
+    }
+  ].filter(x=>finite(x.price) && x.price>0);
+
+  const unique=[];
+
+  for(const item of candidates.sort((a,b)=>a.price-b.price)){
+    const last=unique.at(-1);
+    if(!last || Math.abs(item.price/last.price-1)>.002){
+      unique.push(item);
+    }
+  }
+
+  return {
+    support:unique.filter(x=>x.price<reference).slice(-3).reverse(),
+    resistance:unique.filter(x=>x.price>reference).slice(0,3)
+  };
+}
+
+async function collectCompact(symbol,asOf){
+  const [dailyRaw,h4Raw]=await Promise.all([
+    ensureCandles(symbol,'1d'),
+    ensureCandles(symbol,'4h')
+  ]);
+
+  const daily=validCompletedSeries(dailyRaw,'1d',asOf);
+  const h4=validCompletedSeries(h4Raw,'4h',asOf);
+
+  if(daily.length<60 || h4.length<120){
+    throw new Error(symbol+
+      ' 분석에는 최소 60개 일봉과 120개 4시간봉이 필요합니다.');
+  }
+
+  const d90=daily.filter(c=>c.closeTime>=asOf-90*ONE_DAY);
+  const y1=daily.filter(c=>c.closeTime>=yearStart(asOf));
+
+  const live=liveSnapshot(symbol,asOf);
+  const reference=live.mark.status==='fresh'
+    ? live.mark.price
+    : h4.at(-1).close;
+
+  const warnings=[];
+
+  if(d90.length<89) warnings.push('최근 90일 일봉 이력 부족');
+  if(y1.length<364) warnings.push('최근 1년 일봉 이력 부족');
+  if(daily.length<200) warnings.push('200일 이동평균 산출 불가');
+  if(live.mark.status!=='fresh') warnings.push('마크가격 최신성 부족');
+  if(live.oi.status!=='fresh') warnings.push('현재 OI 누락 또는 지연');
+  if(live.flow.fiveMinutes.status!=='fresh'){
+    warnings.push('최근 5분 체결 구간 미충족: 심리·수급 확정 근거에서 제외');
+  }
+
+  const recentMACD=[2,1,0].map(back=>{
+    const rows=back?h4.slice(0,-back):h4;
+    return {
+      closeTime:iso(rows.at(-1).closeTime),
+      histogram:macd(rows.map(c=>c.close))?.histogram ?? null
+    };
+  });
+
+  const currentBar=h4Raw.find(c=>c.time<=asOf && c.closeTime>=asOf);
+
+  const payload=roundedData({
+    symbol,
+    market:'Binance USDⓈ-M perpetual',
+    asOf:iso(asOf),
+
+    chart:{
+      latestCompletedDailyCloseTime:iso(daily.at(-1).closeTime),
+      latestCompleted4hCloseTime:iso(h4.at(-1).closeTime),
+
+      yearSummary:periodSummary(y1),
+      recent90DaySummary:periodSummary(d90),
+      recent30DaySummary:periodSummary(daily.slice(-30)),
+      recent7DaySummary:periodSummary(daily.slice(-7)),
+
+      dailyIndicators:indicators(daily),
+      fourHourIndicators:indicators(h4),
+      recent4hMACDHistograms:recentMACD,
+
+      confirmedDailySwings:swingPoints(d90).slice(-10),
+      nearbyLevels:supportResistance(daily,h4,reference),
+
+      latestCompleted4hBars:h4.slice(-6).map(c=>({
+        openTime:iso(c.time),
+        closeTime:iso(c.closeTime),
+        open:c.open,high:c.high,low:c.low,close:c.close,
+        volume:c.volume
+      })),
+
+      current4hBar:currentBar?{
+        status:'provisional',
+        openTime:iso(currentBar.time),
+        open:currentBar.open,
+        high:currentBar.high,
+        low:currentBar.low,
+        currentClose:currentBar.close
+      }:null
+    },
+
+    realtime:live,
+    warnings
+  });
+
+  return {symbol,d90,daily,h4,payload};
+}
+
+/* =========================================================
+ 10. 포지션 입력 및 검증된 손익
+========================================================= */
+
+function positionFromUI(symbol){
+  const source=el('kv2PositionSource').value;
+
+  if(source==='none') return null;
+
+  if(source==='calculator'){
+    const p=readPositionSnapshot(symbol);
+
+    if(!p){
+      throw new Error(
+        '현재 계산기 포지션 연결은 BTC 이외 선택 코인 기준입니다. '+
+        'BTC는 시장만 분석하거나 별도로 포지션 연결 코드를 확장해야 합니다.'
+      );
+    }
+
+    return {...p,positionId:null,inputSource:'calculator'};
+  }
+
+  let journal;
+
+  try{
+    journal=JSON.parse(localStorage.getItem('kaiji-trade-journal-v1'));
+  }catch{
+    throw new Error('거래 기록장을 읽지 못했습니다.');
+  }
+
+  const p=journal?.active;
+
+  if(!p) throw new Error('거래 기록장에 진행 포지션이 없습니다.');
+
+  if(p.symbol!==symbol){
+    throw new Error(
+      '진행 포지션은 '+p.symbol+'입니다. 해당 코인을 선택하세요.'
+    );
+  }
+
+  const input=readPositionSnapshot(symbol);
+
+  if(!input) throw new Error('포지션 입력 연결을 확인하세요.');
+
+  if(
+    ![p.margin,p.leverage,p.entry,p.quantity,p.notional,p.feeIn,p.feeOut]
+      .every(finite) ||
+    ![1,-1].includes(p.direction) ||
+    p.margin<=0 || p.entry<=0 || p.quantity<=0 ||
+    p.notional<=0 || p.leverage<1 || p.leverage>125 ||
+    !Number.isInteger(p.leverage) ||
+    p.feeIn<0 || p.feeOut<0
+  ){
+    throw new Error('등록 포지션 데이터 형식이 올바르지 않습니다.');
+  }
+
+  if(input.maintenanceMarginPercent/100>=1/p.leverage){
+    throw new Error('등록 레버리지와 입력 유지증거금률이 충돌합니다.');
+  }
+
+  return {
+    ...input,
+    positionId:p.id,
+    inputSource:'journal',
+    side:p.direction===1?'LONG':'SHORT',
+    direction:p.direction,
+    marginUSDT:p.margin,
+    leverage:p.leverage,
+    entryPrice:p.entry,
+    feeInPercent:p.feeIn,
+    feeOutPercent:p.feeOut,
+    entryNotionalUSDT:p.notional,
+    estimatedQuantity:p.quantity,
+    registeredAt:p.registeredAt,
+    note:'목표·손절·가정 유지증거금률은 현재 계산기에서 확인한 값'
+  };
+}
+
+function positionContext(p,live){
+  if(!p) return null;
+
+  if(live.mark.status!=='fresh'){
+    throw new Error('최신 마크가격 없이 포지션 의견을 생성하지 않습니다.');
+  }
+
+  const mark=live.mark.price;
+  const m=p.maintenanceMarginPercent/100;
+
+  const rawLiq=p.direction===1
+    ? p.entryPrice*(1-1/p.leverage)/(1-m)
+    : p.entryPrice*(1+1/p.leverage)/(1+m);
+
+  const liq=rawLiq>0?rawLiq:null;
+
+  const beyond=value=>liq!==null &&
+    (p.direction===1?value<=liq:value>=liq);
+
+  function evaluate(value){
+    if(value===null) return null;
+
+    const gross=p.direction*p.estimatedQuantity*(value-p.entryPrice);
+    const fees=p.entryNotionalUSDT*p.feeInPercent/100+
+      p.estimatedQuantity*value*p.feeOutPercent/100;
+
+    const net=gross-fees;
+
+    if(![gross,fees,net].every(finite)){
+      throw new Error('포지션 손익 계산 범위를 초과했습니다.');
+    }
+
+    return {
+      exitPrice:value,
+      grossPnlUSDT:gross,
+      estimatedFeesUSDT:fees,
+      estimatedNetPnlUSDT:net,
+      marginReturnPercent:net/p.marginUSDT*100,
+      grossChangeFromMarkUSDT:
+        p.direction*p.estimatedQuantity*(value-mark),
+      atOrBeyondEstimatedLiquidation:beyond(value)
+    };
+  }
+
+  return roundedData({
+    ...p,
+    markPrice:mark,
+    markTime:live.mark.eventTime,
+    estimatedLiquidationPrice:liq,
+
+    adverseMoveToEstimatedLiquidationPercent:
+      liq===null?null:p.direction*(mark-liq)/mark*100,
+
+    valuationAtMark:evaluate(mark),
+    targetEvaluation:evaluate(p.userTargetPrice),
+    stopEvaluation:evaluate(p.userStopPrice),
+
+    stopAlreadyCrossed:p.userStopPrice!==null &&
+      (p.direction===1?mark<=p.userStopPrice:mark>=p.userStopPrice),
+
+    currentMarkBeyondEstimatedLiquidation:beyond(mark),
+
+    warnings:[
+      '실제 계좌 조회가 아닌 입력 기반 추정',
+      '실제 체결 수량·거래소 표시 청산가와 다를 수 있음',
+      '펀딩 누적비용·슬리피지·교차잔고·추가 증거금 미반영',
+      '가정 청산가를 손절 목표로 사용하지 말 것',
+      '기술적 종가 무효화는 실행 가능한 보호 손절 주문과 다름'
+    ]
+  });
+}
+
+/* =========================================================
+ 11. 이전 계획 자동 판정
+========================================================= */
+
+const terminalStatuses=new Set([
+  'TARGET_REACHED','INVALIDATED','EXPIRED','AMBIGUOUS'
+]);
+
+const historicalRanges=new Map();
+
+async function getHistorical4h(symbol,start,end){
+  const cache=candleCache.get(symbol+'|4h');
+
+  if(
+    cache?.rows?.length &&
+    cache.rows[0].time<=start &&
+    cache.rows.at(-1).closeTime>=end
+  ){
+    return cache.rows.filter(c=>
+      c.closeTime>=start && c.time<=end
+    );
+  }
+
+  const key=[symbol,Math.floor(start/FOUR_HOURS),Math.floor(end/FOUR_HOURS)].join('|');
+  if(historicalRanges.has(key)) return historicalRanges.get(key);
+
+  const work=(async()=>{
+    const all=[];
+    let cursor=Math.floor(end);
+
+    // 각 계획 최대 수명은 37일 이내.
+    // 안전 상한을 두고 부족하면 성공/실패 대신 데이터 부족 처리.
+    for(let page=0;page<4;page++){
+      const rows=parseCandles(await marketJSON(
+        '/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+
+        '&interval=4h&limit=1000&endTime='+cursor
+      ));
+
+      all.unshift(...rows);
+
+      if(rows[0].time<=start) break;
+      cursor=rows[0].time-1;
+    }
+
+    const unique=new Map(all.map(c=>[c.time,c]));
+
+    return [...unique.values()]
+      .sort((a,b)=>a.time-b.time)
+      .filter(c=>c.closeTime>=start && c.time<=end);
+  })();
+
+  historicalRanges.set(key,work);
+
+  try{
+    return await work;
+  }catch(e){
+    historicalRanges.delete(key);
+    throw e;
+  }
+}
+
+function enoughCoverage(rows,start,end,asOf){
+  const expectedFirst=Math.floor(start/FOUR_HOURS)*FOUR_HOURS;
+  const bound=Math.min(end,asOf);
+  const expectedLastClose=Math.floor(bound/FOUR_HOURS)*FOUR_HOURS-1;
+
+  if(expectedLastClose<expectedFirst) return true;
+
+  const relevant=rows.filter(c=>
+    c.time>=expectedFirst && c.closeTime<=expectedLastClose
+  );
+
+  if(!relevant.length) return false;
+  if(relevant[0].time!==expectedFirst) return false;
+  if(relevant.at(-1).closeTime!==expectedLastClose) return false;
+
+  return relevant.every((c,i)=>
+    i===0 || c.time-relevant[i-1].time===FOUR_HOURS
+  );
+}
+
+async function evaluateScenario(s,analysisId,asOf){
+  const old=latestEvaluations.get(s.id);
+
+  if(old && terminalStatuses.has(old.status)) return old;
+
+  const base={
+    scenarioId:s.id,
+    analysisId,
+    symbol:s.symbol,
+    role:s.role,
+    direction:s.direction,
+    evaluatedAt:asOf,
+    status:'NOT_TRIGGERED',
+    triggeredAt:null,
+    eventAt:null,
+    note:'완료 4시간봉만 사용. 실제 체결·실제 손익 판정 아님.'
+  };
+
+  const maxEnd=Math.min(
+    asOf,
+    s.triggerDeadline+s.holdHours*HOUR
+  );
+
+  let rows,btcRows=[];
+
+  try{
+    rows=await getHistorical4h(s.symbol,s.validFrom,maxEnd);
+
+    if(s.btcGuardOperator!=='none'){
+      btcRows=await getHistorical4h('BTCUSDT',s.validFrom,maxEnd);
+    }
+  }catch(e){
+    return {
+      ...base,
+      status:'INSUFFICIENT_DATA',
+      note:'평가 데이터 조회 실패: '+errorText(e)
+    };
+  }
+
+  const btcMap=new Map(btcRows.map(c=>[c.closeTime,c.close]));
+
+  const triggerEnd=Math.min(s.triggerDeadline,asOf);
+
+  if(!enoughCoverage(rows,s.validFrom,triggerEnd,asOf)){
+    return {
+      ...base,
+      status:'INSUFFICIENT_DATA',
+      note:'발동 평가 구간의 완료 4시간봉이 부족하거나 중간 공백이 있음'
+    };
+  }
+
+  if(
+    s.btcGuardOperator!=='none' &&
+    !enoughCoverage(btcRows,s.validFrom,triggerEnd,asOf)
+  ){
+    return {
+      ...base,
+      status:'INSUFFICIENT_DATA',
+      note:'BTC 동시 확인 조건의 캔들 이력 부족'
+    };
+  }
+
+  const candidates=rows.filter(c=>
+    c.closeTime>=s.validFrom &&
+    c.closeTime<=s.triggerDeadline &&
+    c.closeTime<asOf
+  );
+
+  let trigger=null;
+
+  for(const c of candidates){
+    const priceOK=s.direction==='LONG'
+      ? c.close>s.triggerPrice
+      : c.close<s.triggerPrice;
+
+    let btcOK=true;
+
+    if(s.btcGuardOperator!=='none'){
+      const btcClose=btcMap.get(c.closeTime);
+
+      btcOK=finite(btcClose) &&
+        (s.btcGuardOperator==='above'
+          ? btcClose>s.btcGuardPrice
+          : btcClose<s.btcGuardPrice);
+    }
+
+    if(priceOK && btcOK){
+      trigger=c;
+      break;
+    }
+  }
+
+  if(!trigger){
+    return {
+      ...base,
+      status:asOf>=s.triggerDeadline?'EXPIRED':'NOT_TRIGGERED',
+      note:asOf>=s.triggerDeadline
+        ? '발동 기한 내 확인 조건 미충족. 예측 실패나 손실 거래로 집계하지 않음.'
+        : base.note
+    };
+  }
+
+  const triggeredAt=trigger.closeTime;
+  const expiry=triggeredAt+s.holdHours*HOUR;
+  const end=Math.min(expiry,asOf);
+
+  // 트리거 봉 이전의 고가/저가를 목표 도달로 사용하지 않음.
+  const after=rows.filter(c=>
+    c.time>triggeredAt &&
+    c.closeTime<=end &&
+    c.closeTime<asOf
+  );
+
+  if(!enoughCoverage(rows,triggeredAt+1,end,asOf)){
+    return {
+      ...base,
+      triggeredAt,
+      status:'INSUFFICIENT_DATA',
+      note:'발동 이후 목표·무효화 평가 구간에 캔들 공백이 있음'
+    };
+  }
+
+  for(const c of after){
+    const targetHit=s.direction==='LONG'
+      ? c.high>=s.targetPrice
+      : c.low<=s.targetPrice;
+
+    const invalidHit=s.direction==='LONG'
+      ? c.low<=s.invalidationPrice
+      : c.high>=s.invalidationPrice;
+
+    if(targetHit && invalidHit){
+      return {
+        ...base,triggeredAt,eventAt:c.closeTime,
+        status:'AMBIGUOUS',
+        note:'같은 완료 4시간봉에서 목표·무효화에 모두 도달. 도달 순서는 추측하지 않음.'
+      };
+    }
+
+    if(invalidHit){
+      return {
+        ...base,triggeredAt,eventAt:c.closeTime,
+        status:'INVALIDATED',
+        note:'발동 이후 목표 확인 전 무효화 가격 도달. 실제 손절 체결 여부는 알 수 없음.'
+      };
+    }
+
+    if(targetHit){
+      return {
+        ...base,triggeredAt,eventAt:c.closeTime,
+        status:'TARGET_REACHED',
+        note:'발동 이후 무효화 확인 전 목표 가격 도달. 실제 익절 체결·수익을 의미하지 않음.'
+      };
+    }
+  }
+
+  return {
+    ...base,
+    triggeredAt,
+    status:asOf>=expiry?'EXPIRED':'ACTIVE',
+    note:asOf>=expiry
+      ? '발동 후 평가 기한 종료. 확인된 목표·무효화 도달 없음.'
+      : '완료 4시간봉 기준 관찰 중. 진행 중인 봉의 도달은 아직 자동 판정에 포함되지 않음.'
+  };
+}
+
+async function reviewPrevious(targets,asOf){
+  const relevant=savedAnalyses
+    .filter(a=>a.symbols.some(s=>targets.includes(s)));
+
+  const scenarios=[];
+
+  for(const a of relevant){
+    for(const s of a.scenarios || []){
+      if(targets.includes(s.symbol)){
+        scenarios.push({scenario:s,analysis:a});
+      }
+    }
+  }
+
+  const evaluations=[];
+
+  // 순차 실행하여 무제한 병렬 REST 요청 방지.
+  for(const item of scenarios){
+    const ev=await evaluateScenario(
+      item.scenario,item.analysis.id,asOf
+    );
+    evaluations.push(ev);
+  }
+
+  const combined=scenarios.map((item,i)=>({
+    originalAnalysisId:item.analysis.id,
+    originalCreatedAt:iso(item.analysis.createdAt),
+    scenario:item.scenario,
+    evaluation:evaluations[i]
+  }));
+
+  // 모든 대상 계획을 코드로 평가하되 AI에는 최근 핵심만 전달.
+  const priority=combined.filter(x=>
+    !terminalStatuses.has(x.evaluation.status) ||
+    (x.evaluation.eventAt || 0)>=asOf-7*ONE_DAY
+  );
+
+  const recent=combined.slice(0,8);
+  const selection=new Map();
+
+  for(const item of [...recent,...priority]){
+    if(selection.size>=12) break;
+    selection.set(item.scenario.id,item);
+  }
+
+  const counts={};
+  for(const e of evaluations){
+    counts[e.status]=(counts[e.status]||0)+1;
+  }
+
+  return {
+    evaluations,
+    payload:{
+      evaluatedScenarioCount:evaluations.length,
+      statusCounts:counts,
+      detailCount:selection.size,
+      note:
+        '코드 판정은 변경하지 말 것. AI 입력에는 최근/미종결 계획 중 최대 12개 상세만 포함. '+
+        '시나리오 도달률을 실제 매매 승률로 표현하지 말 것.',
+      details:[...selection.values()].map(x=>({
+        ...x,
+        scenario:{
+          id:x.scenario.id,
+          symbol:x.scenario.symbol,
+          role:x.scenario.role,
+          direction:x.scenario.direction,
+          triggerPrice:x.scenario.triggerPrice,
+          targetPrice:x.scenario.targetPrice,
+          invalidationPrice:x.scenario.invalidationPrice,
+          btcGuardOperator:x.scenario.btcGuardOperator,
+          btcGuardPrice:x.scenario.btcGuardPrice,
+          reason:x.scenario.reason,
+          validFrom:iso(x.scenario.validFrom),
+          triggerDeadline:iso(x.scenario.triggerDeadline),
+          holdHours:x.scenario.holdHours
+        }
+      }))
+    }
+  };
+}
+
+/* =========================================================
+ 12. 구조화 출력 스키마와 프롬프트
+========================================================= */
+
+function objectSchema(properties){
+  return {
+    type:'object',
+    additionalProperties:false,
+    properties,
+    required:Object.keys(properties)
+  };
+}
+
+const stringSchema={type:'string'};
+const stringArray={type:'array',items:{type:'string'}};
+
+const planSchema=objectSchema({
+  role:{type:'string',enum:['preferred','alternative']},
+  direction:{type:'string',enum:['LONG','SHORT']},
+  triggerPrice:{type:'number'},
+  targetPrice:{type:'number'},
+  invalidationPrice:{type:'number'},
+  triggerWithinHours:{type:'integer',enum:[24,48,72,168]},
+  holdHours:{type:'integer',enum:[24,72,168,336,720]},
+  btcGuardOperator:{type:'string',enum:['none','above','below']},
+  btcGuardPrice:{type:['number','null']},
+  reason:stringSchema
+});
+
+const OUTPUT_SCHEMA=objectSchema({
+  summary:stringSchema,
+
+  assets:{
+    type:'array',
+    items:objectSchema({
+      symbol:stringSchema,
+      structure:stringSchema,
+      flowAndSentiment:stringSchema,
+      keyEvidence:stringArray,
+      risks:stringSchema,
+      plans:{type:'array',items:planSchema}
+    })
+  },
+
+  reviewComments:{
+    type:'array',
+    items:objectSchema({
+      scenarioId:stringSchema,
+      confirmedLimitation:stringSchema,
+      changeForNextPlan:stringSchema,
+      uncertainty:stringSchema
+    })
+  },
+
+  positionManagement:stringSchema,
+  nextChecks:stringArray,
+  limitations:stringArray
+});
+
+const V2_INSTRUCTIONS=`
+너는 한국어 암호화폐 시장 분석 도우미다.
+입력 자료를 근거로 조건부 계획을 설명하되 수익·승률을 보장하지 않는다.
+
+범위:
+- BTC를 항상 첫 번째로 분석한다.
+- 추가 코인은 BTC와 구분하여 분석한다.
+- 최근 90일 구조가 우선이고 최근 1년은 보조 맥락이다.
+- 원시 전체 캔들이 아니라 계산된 요약과 일부 최근 봉만 제공된다.
+- 제공되지 않은 차트 패턴, 뉴스, SNS, 온체인, 청산맵을 만들지 않는다.
+- 외부 검색을 했다고 말하지 않는다.
+
+데이터 해석:
+- 완료 봉 지표와 진행 봉 잠정 움직임을 구분한다.
+- mark.status가 fresh가 아니면 최신 현재가 근거로 사용하지 않는다.
+- stale/missing/warming 데이터는 현재 수급의 확정 근거에서 제외한다.
+- 체결 구간의 coverage와 status를 확인한다.
+- 공격적 체결대금은 거래소 내 체결 흐름이지 전체 시장 순유입액이 아니다.
+- OI 증감으로 신규 롱·숏 비율이나 특정 주체를 확정하지 않는다.
+- 펀딩률은 피드 제공 값이며 다음 회차 확정 비용으로 단정하지 않는다.
+- 펀딩 간격을 무조건 8시간으로 고정하지 않는다.
+- 거래 심리 대리 지표와 전체 투자자 심리를 구분한다.
+- RSI만으로 반전을 확정하지 않는다.
+- 직전 값이 없는 지표의 교차 시점을 만들지 않는다.
+
+이전 계획:
+- previousReview의 evaluation은 코드 판정이다. 상태를 바꾸지 않는다.
+- NOT_TRIGGERED와 미발동 EXPIRED를 손실이나 예측 실패로 집계하지 않는다.
+- TARGET_REACHED는 실제 수익 실현을 의미하지 않는다.
+- AMBIGUOUS는 순서를 알 수 없으므로 성공/실패를 확정하지 않는다.
+- 과거 원본 근거가 부족하면 원인 모름을 인정한다.
+- 사후에 알게 된 사실을 과거에도 알 수 있었던 것처럼 설명하지 않는다.
+- 이전 판단이 무효화됐다면 확인된 한계와 이번 수정 이유를 연결한다.
+- 시장 변화와 분석 논리 오류를 구분한다.
+- 근거가 유지되면 무조건 계획을 바꾸지 않는다.
+- reviewComments에는 제공된 scenarioId만 사용한다.
+- 기존 모델이 재학습됐다고 표현하지 않는다.
+
+계획:
+- assets에는 analyzedSymbols에 있는 코인만, BTC 먼저, 각각 한 번 포함한다.
+- 코인마다 최대 2개 계획. preferred는 최대 1개.
+- 근거가 부족하면 plans=[]로 두고 관망을 설명한다.
+- 방향 맞추기를 위해 무조건 상승/하락 계획을 모두 만들지 않는다.
+- 모든 진입 확인은 앞으로의 완료 4시간봉 종가 기준이다.
+- LONG은 종가가 triggerPrice보다 커야 발동한다.
+- SHORT는 종가가 triggerPrice보다 작아야 발동한다.
+- targetPrice와 invalidationPrice는 발동 이후 가격 터치 조건이다.
+- LONG: targetPrice > triggerPrice > invalidationPrice.
+- SHORT: targetPrice < triggerPrice < invalidationPrice.
+- 가격은 제공된 지지저항, 스윙, 이동평균 등과 연결된 근거가 있어야 한다.
+- 근거가 없는 정밀한 가격이나 먼 목표는 만들지 않는다.
+- btcGuard는 선택 코인의 같은 4시간봉 마감에서 BTC 종가 확인 조건이다.
+- BTC 자체 계획은 btcGuardOperator=none, btcGuardPrice=null.
+- none이면 btcGuardPrice=null. 그 외에는 양수 가격.
+- 이미 목표나 무효화 너머인 현재 가격에 대해 지나간 기회를 새 진입처럼 권하지 않는다.
+- 계획은 가상 조건부 관찰 계획이며 주문 실행이나 최적 매매 경로가 아니다.
+- 미발동 만료와 발동 후 보유 기간을 구분한다.
+
+포지션:
+- userPosition이 없으면 보유 포지션을 가정하지 않는다.
+- 사용자 방향이나 희망 목표가에 시장 분석을 맞추지 않는다.
+- 손익은 제공된 계산값만 인용한다.
+- 총자산/허용손실액이 없으면 최적 수량을 단정하지 않는다.
+- 손실 만회 물타기, 레버리지 확대, 손절 확대를 기본 해법으로 제안하지 않는다.
+- 추정 청산가를 실제 청산가나 손절 목표로 쓰지 않는다.
+- 기술적 무효화가 청산 바깥이면 실효성 없는 보호 계획임을 명시한다.
+- 종가를 기다리기 전에 청산될 위험을 구분한다.
+- 입력 손절이 이미 통과됐다면 미래 조건처럼 말하지 않는다.
+- 실제 주문은 전송하지 않으며 자동 감시 리포트가 아니다.
+
+출력:
+- 지정 JSON 스키마만 출력한다.
+- 모든 설명은 한국어. HTML과 마크다운 표는 사용하지 않는다.
+- 핵심 근거와 변경 이유 위주로 간결하게 작성한다.
+- 전체 설명은 대체로 1800~3000자 이내를 목표로 한다.
+- 분석 기준시각 이후 가격이 변할 수 있음을 명시한다.
+`;
+
+/* =========================================================
+ 13. 결과 검증 및 저장용 계획 생성
+========================================================= */
+
+function validateAIResult(result,targets,previousReview,createdAt){
+  if(!result || !Array.isArray(result.assets)){
+    throw new Error('AI 구조화 결과 형식 오류');
+  }
+
+  if(result.assets.length!==targets.length){
+    throw new Error('AI 결과의 분석 대상 수가 요청과 다릅니다.');
+  }
+
+  const seen=new Set();
+  const scenarios=[];
+
+  for(let i=0;i<result.assets.length;i++){
+    const asset=result.assets[i];
+
+    if(
+      asset.symbol!==targets[i] ||
+      seen.has(asset.symbol) ||
+      !Array.isArray(asset.plans) ||
+      asset.plans.length>2
+    ){
+      throw new Error('AI 결과의 코인 순서·중복·계획 개수를 확인할 수 없습니다.');
+    }
+
+    seen.add(asset.symbol);
+
+    if(asset.plans.filter(x=>x.role==='preferred').length>1){
+      throw new Error('코인별 우선 관찰 계획이 중복되었습니다.');
+    }
+
+    for(const p of asset.plans){
+      const nums=[p.triggerPrice,p.targetPrice,p.invalidationPrice];
+
+      if(!nums.every(x=>finite(x)&&x>0)){
+        throw new Error('계획 가격이 올바르지 않습니다.');
+      }
+
+      const order=p.direction==='LONG'
+        ? p.targetPrice>p.triggerPrice && p.triggerPrice>p.invalidationPrice
+        : p.direction==='SHORT'
+          ? p.targetPrice<p.triggerPrice && p.triggerPrice<p.invalidationPrice
+          : false;
+
+      if(!order) throw new Error('계획 방향과 목표·무효화 가격 순서가 충돌합니다.');
+
+      if(![24,48,72,168].includes(p.triggerWithinHours) ||
+         ![24,72,168,336,720].includes(p.holdHours)){
+        throw new Error('계획 평가 기간이 허용 범위를 벗어났습니다.');
+      }
+
+      if(!['none','above','below'].includes(p.btcGuardOperator)){
+        throw new Error('BTC 확인 조건 형식 오류');
+      }
+
+      if(p.btcGuardOperator==='none' && p.btcGuardPrice!==null){
+        throw new Error('사용하지 않는 BTC 조건 가격은 null이어야 합니다.');
+      }
+
+      if(p.btcGuardOperator!=='none' &&
+         (!finite(p.btcGuardPrice)||p.btcGuardPrice<=0)){
+        throw new Error('BTC 확인 조건 가격 오류');
+      }
+
+      if(asset.symbol==='BTCUSDT' && p.btcGuardOperator!=='none'){
+        throw new Error('BTC 자체 계획에 중복 BTC 확인 조건이 있습니다.');
+      }
+
+      scenarios.push({
+        id:uuid(),
+        symbol:asset.symbol,
+        role:p.role,
+        direction:p.direction,
+        triggerPrice:p.triggerPrice,
+        targetPrice:p.targetPrice,
+        invalidationPrice:p.invalidationPrice,
+        btcGuardOperator:p.btcGuardOperator,
+        btcGuardPrice:p.btcGuardPrice,
+        reason:p.reason,
+
+        validFrom:createdAt,
+        triggerDeadline:createdAt+p.triggerWithinHours*HOUR,
+        triggerWithinHours:p.triggerWithinHours,
+        holdHours:p.holdHours,
+
+        triggerRule:'completed_4h_close',
+        resultRule:'touch_in_subsequent_completed_4h_bars',
+        sameBarConflictRule:'AMBIGUOUS'
+      });
+    }
+  }
+
+  const allowedIDs=new Set(
+    previousReview.details.map(x=>x.scenario.id)
+  );
+
+  for(const comment of result.reviewComments || []){
+    if(!allowedIDs.has(comment.scenarioId)){
+      throw new Error('AI 복기 의견이 존재하지 않는 과거 계획을 참조합니다.');
+    }
+  }
+
+  return scenarios;
+}
+
+function formatReport(result,scenarios,review,meta,position){
+  const lines=[];
+
+  lines.push(
+    '[데이터 기준]',
+    '분석 스냅샷: '+timeText(meta.snapshotAsOf),
+    '리포트 생성: '+timeText(meta.createdAt),
+    '범위: Binance USDⓈ-M 해당 계약',
+    '완료 봉으로 구조 판단, 실시간 스냅샷으로 현재 상태 확인',
+    '',
+    '[핵심 요약]',
+    result.summary
+  );
+
+  for(const asset of result.assets){
+    lines.push(
+      '',
+      '['+shortName(asset.symbol)+' 분석]',
+      asset.structure,
+      '',
+      '수급·거래 행동 심리',
+      asset.flowAndSentiment,
+      '',
+      '핵심 근거',
+      ...asset.keyEvidence.map(x=>'• '+x),
+      '',
+      '위험·반대 근거',
+      asset.risks
+    );
+  }
+
+  lines.push('','[이전 계획 자동 검증]');
+
+  if(!review.evaluatedScenarioCount){
+    lines.push(
+      '평가 가능한 v2 구조화 계획이 아직 없습니다.',
+      '기존 텍스트 기록은 자동 채점하지 않습니다.'
+    );
+  }else{
+    lines.push('평가 계획: '+review.evaluatedScenarioCount+'개');
+
+    for(const [status,count] of Object.entries(review.statusCounts)){
+      lines.push((STATUS_LABELS[status]||status)+': '+count+'개');
+    }
+
+    for(const item of review.details){
+      lines.push(
+        '',
+        shortName(item.scenario.symbol)+' '+item.scenario.direction+
+          ' · '+(item.scenario.role==='preferred'?'우선 관찰':'대안'),
+        '이전 생성: '+item.originalCreatedAt,
+        '조건 '+price(item.scenario.triggerPrice)+
+          ' / 목표 '+price(item.scenario.targetPrice)+
+          ' / 무효화 '+price(item.scenario.invalidationPrice),
+        evalText(item.evaluation)
+      );
+
+      const comment=result.reviewComments.find(
+        x=>x.scenarioId===item.scenario.id
+      );
+
+      if(comment){
+        lines.push(
+          '확인된 한계: '+comment.confirmedLimitation,
+          '이번 수정: '+comment.changeForNextPlan,
+          '불확실한 부분: '+comment.uncertainty
+        );
+      }
+    }
+  }
+
+  lines.push('','[새 조건부 관찰 계획]');
+
+  if(!scenarios.length){
+    lines.push('새 진입 계획을 만들지 않았습니다. 관망 또는 데이터 확보를 우선합니다.');
+  }
+
+  for(const s of scenarios){
+    lines.push(
+      '',
+      shortName(s.symbol)+' '+s.direction+
+        ' · '+(s.role==='preferred'?'우선 관찰':'대안'),
+      '발동: 앞으로의 완료 4시간봉 종가가 '+price(s.triggerPrice)+
+        (s.direction==='LONG'?' 초과':' 미만'),
+      '발동 기한: '+timeText(s.triggerDeadline),
+      '발동 후 평가 기간: '+s.holdHours+'시간',
+      '목표 터치: '+price(s.targetPrice),
+      '무효화 터치: '+price(s.invalidationPrice),
+
+      s.btcGuardOperator==='none'
+        ? 'BTC 추가 종가 조건: 없음'
+        : 'BTC 같은 4시간봉 종가: '+price(s.btcGuardPrice)+
+          (s.btcGuardOperator==='above'?' 초과':' 미만'),
+
+      '근거: '+s.reason
+    );
+  }
+
+  lines.push(
+    '',
+    '[포지션 관리]',
+    position
+      ? result.positionManagement
+      : '보유 포지션을 연결하지 않았습니다. 아래 계획은 시장 관찰용입니다.'
+  );
+
+  if(position){
+    lines.push(
+      '',
+      '연결 기준: '+position.inputSource,
+      '코인: '+position.symbol+' / '+position.side,
+      '진입가: '+price(position.entryPrice),
+      '입력 증거금: '+fmt(position.marginUSDT)+' USDT',
+      '레버리지: '+position.leverage+'x',
+      '마크 기준 추정 순손익: '+
+        signed(position.valuationAtMark.estimatedNetPnlUSDT)+' USDT',
+      '단순 추정 청산가: '+
+        (position.estimatedLiquidationPrice
+          ? price(position.estimatedLiquidationPrice)
+          : '양의 추정 청산가 없음')
+    );
+  }
+
+  lines.push(
+    '',
+    '[다음 확인 조건]',
+    ...result.nextChecks.map(x=>'• '+x),
+    '',
+    '[한계]',
+    ...result.limitations.map(x=>'• '+x),
+    '• 완료 4시간봉 기반 복기는 진행 중인 봉의 도달을 즉시 판정하지 않습니다.',
+    '• 새 계획은 생성 이후부터 유효합니다. 분석 중 지나간 가격 움직임은 소급 채점하지 않습니다.',
+    '• 실제 주문·실제 체결·수익 실현을 의미하지 않습니다.',
+    '• 페이지 데이터는 갱신되지만 이 AI 리포트 자체는 정적 결과입니다.'
+  );
+
+  return lines.join('\n');
+}
+
+function usageText(usage,model){
+  if(!usage) return '토큰 사용량 정보가 반환되지 않았습니다.';
+
+  const input=Number(usage.input_tokens)||0;
+  const output=Number(usage.output_tokens)||0;
+  const cached=Number(usage.input_tokens_details?.cached_tokens)||0;
+  const rates=CFG.PRICES[model];
+
+  let text=
+    '모델: '+model+'\n'+
+    '입력 '+input.toLocaleString()+' tokens · '+
+    '캐시 입력 '+cached.toLocaleString()+' · '+
+    '출력 '+output.toLocaleString()+' tokens';
+
+  if(rates && [rates.input,rates.cachedInput,rates.output].every(finite)){
+    const cost=(
+      Math.max(0,input-cached)*rates.input+
+      cached*rates.cachedInput+
+      output*rates.output
+    )/1e6;
+
+    text+='\n설정 단가 기준 예상 비용: $'+cost.toFixed(6);
+  }else{
+    text+='\n비용 단가는 미설정입니다. 최신 OpenAI 요금표·사용량 화면에서 확인하세요.';
+  }
+
+  return text;
+}
+
+/* =========================================================
+ 14. OpenAI 단일 호출
+========================================================= */
+
+async function callOpenAI(key,model,payload){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),180000);
+
+  try{
+    const response=await fetch('https://api.openai.com/v1/responses',{
+      method:'POST',
+      signal:controller.signal,
+      credentials:'omit',
+      referrerPolicy:'no-referrer',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Bearer '+key
+      },
+      body:JSON.stringify({
+        model,
+        store:false,
+        max_output_tokens:CFG.MAX_OUTPUT_TOKENS,
+        instructions:V2_INSTRUCTIONS,
+
+        text:{
+          format:{
+            type:'json_schema',
+            name:'kaiji_market_analysis_v2',
+            strict:true,
+            schema:OUTPUT_SCHEMA
+          }
+        },
+
+        input:JSON.stringify(payload)
+      })
+    });
+
+    let body;
+    try{body=await response.json();}catch{
+      throw new Error('OpenAI 응답 JSON을 읽지 못했습니다.');
+    }
+
+    if(!response.ok){
+      if(response.status===401) throw new Error('OpenAI API 키를 확인하세요.');
+      if(response.status===429){
+        throw new Error('OpenAI 결제·사용량 한도·요청 제한을 확인하세요.');
+      }
+
+      throw new Error(
+        'OpenAI HTTP '+response.status+' · '+
+        (body.error?.message || '모델 접근 권한과 요청 형식을 확인하세요.')
+      );
+    }
+
+    if(body.status!=='completed'){
+      throw new Error(
+        'AI 결과가 완료되지 않았습니다: '+(body.status||'unknown')+
+        ' · 불완전한 계획은 저장·활성화하지 않습니다.'
+      );
+    }
+
+    const content=(body.output||[])
+      .filter(x=>x.type==='message')
+      .flatMap(x=>x.content||[]);
+
+    const refusal=content.find(x=>x.type==='refusal');
+    if(refusal) throw new Error('AI가 분석을 반환하지 않았습니다.');
+
+    const text=content
+      .filter(x=>x.type==='output_text')
+      .map(x=>x.text)
+      .join('\n');
+
+    if(!text) throw new Error('구조화된 분석 결과가 비어 있습니다.');
+
+    let parsed;
+
+    try{parsed=JSON.parse(text);}catch{
+      throw new Error('AI 구조화 결과 파싱 실패. 계획을 활성화하지 않았습니다.');
+    }
+
+    return {parsed,usage:body.usage,responseId:body.id};
+  }catch(e){
+    if(e.name==='AbortError'){
+      throw new Error(
+        'OpenAI 응답 시간이 초과되었습니다. 자동 재요청하지 않습니다. '+
+        '이미 처리된 요청에는 비용이 발생할 수 있습니다.'
+      );
+    }
+    throw e;
+  }finally{
+    clearTimeout(timer);
+  }
+}
+
+/* =========================================================
+ 15. 분석 버튼 교체
+========================================================= */
+
+el('analyze').onclick=async()=>{
+  if(aiBusy) return;
+
+  if(!db){
+    el('aiError').textContent=
+      '구조화 기록 저장소를 사용할 수 없습니다. '+dbError;
+    return;
+  }
+
+  let key=el('apiKey').value.trim();
+
+  if(!key){
+    el('aiError').textContent='OpenAI API 키를 입력하세요.';
+    el('apiKey').focus();
+    return;
+  }
+
+  if(Date.now()-lastAiRequest<20000){
+    el('aiError').textContent='분석 요청 사이에 20초 간격을 두세요.';
+    return;
+  }
+
+  const selected=currentCoin;
+  const targets=[...new Set(['BTCUSDT',selected])];
+  const model=el('kv2Model').value;
+  let position=null;
+
+  try{
+    position=positionFromUI(selected);
+
+    if(position){
+      const accepted=confirm(
+        '이 포지션을 분석에 연결합니다.\n\n'+
+        position.symbol+' '+position.side+'\n'+
+        '기준: '+position.inputSource+'\n'+
+        '진입가: '+price(position.entryPrice)+'\n'+
+        '증거금: '+fmt(position.marginUSDT)+' USDT\n'+
+        '레버리지: '+position.leverage+'x\n'+
+        '수량: '+position.estimatedQuantity+'\n'+
+        '목표: '+price(position.userTargetPrice)+'\n'+
+        '손절: '+(position.userStopPrice===null
+          ?'미입력':price(position.userStopPrice))+'\n\n'+
+        '실제 보유 설정과 일치하나요?\n'+
+        'API 키를 제외한 분석 자료가 OpenAI로 전송됩니다.'
+      );
+
+      if(!accepted) return;
+    }
+  }catch(e){
+    el('aiError').textContent=errorText(e);
+    return;
+  }
+
+  aiBusy=true;
+  lastAiRequest=Date.now();
+  lockedSymbols=targets;
+  el('analyze').disabled=true;
+  el('analyze').textContent='최신 데이터 · 이전 계획 검증 중…';
+  el('aiError').textContent='';
+  el('reportMeta').textContent='v2 · 데이터 준비 중';
+  el('report').textContent=
+    '현재 거래소 시각과 완료 봉을 확인하고 이전 구조화 계획을 검증합니다.\n\n'+
+    'OI·체결 구간이 충분하지 않으면 해당 신호는 분석 근거에서 제외합니다.';
+
+  let completedRecord=null;
+
+  try{
+    if(Date.now()-timeSyncAt>60000) await syncTime();
+
+    await reloadHistory();
+
+    const collected=[];
+    const failures=[];
+
+    for(const symbol of targets){
+      try{
+        await ensureCandles(symbol,'1d');
+        await ensureCandles(symbol,'4h');
+
+        const state=stateFor(symbol);
+
+        if(
+          !state.mark ||
+          marketNow()-state.mark.eventTime>4000 ||
+          Date.now()-state.mark.receivedAt>4000
+        ){
+          await refreshPremium(symbol);
+        }
+
+        // OI 실패는 시장 전체 분석을 막지 않고 누락으로 처리.
+        const oi=state.oi.at(-1);
+        if(!oi || marketNow()-oi.time>CFG.OI_STALE_MS){
+          await refreshOI(symbol);
+        }
+
+        collected.push(await collectCompact(symbol,marketNow()));
+      }catch(e){
+        if(symbol==='BTCUSDT') throw new Error('BTC 핵심 데이터 오류: '+errorText(e));
+        failures.push(symbol+': '+errorText(e));
+      }
+    }
+
+    const analyzedSymbols=collected.map(x=>x.symbol);
+
+    if(position && !analyzedSymbols.includes(position.symbol)){
+      throw new Error(
+        '포지션 코인의 분석 데이터가 없습니다. '+
+        '시장만 분석하려면 포지션 연결을 해제하세요.'
+      );
+    }
+
+    const beforeReview=marketNow();
+
+    el('reportMeta').textContent='v2 · 이전 계획 조건 검증 중';
+    el('report').textContent=
+      '과거 계획의 발동·목표·무효화·기한을 코드로 확인하고 있습니다.\n\n'+
+      '조건 미발동은 실패로 처리하지 않으며, 같은 봉에서 양쪽 가격에 닿으면 순서를 추측하지 않습니다.';
+
+    const review=await reviewPrevious(analyzedSymbols,beforeReview);
+
+    // 복기 조회에 시간이 걸렸다면 최신 마크가격을 다시 확인.
+    for(const c of collected){
+      const state=stateFor(c.symbol);
+
+      if(
+        !state.mark ||
+        marketNow()-state.mark.eventTime>4000 ||
+        Date.now()-state.mark.receivedAt>4000
+      ){
+        await refreshPremium(c.symbol);
+      }
+    }
+
+    const snapshotAsOf=marketNow();
+
+    // 봉 경계를 넘었을 수 있으므로 최종 요약도 새로 구성.
+    const finalCollected=[];
+
+    for(const c of collected){
+      const updated=await collectCompact(c.symbol,snapshotAsOf);
+
+      if(updated.payload.realtime.mark.status!=='fresh'){
+        throw new Error(
+          c.symbol+' 최신 마크가격을 확인하지 못했습니다. AI 호출을 중지했습니다.'
+        );
+      }
+
+      finalCollected.push(updated);
+    }
+
+    const finalTargets=finalCollected.map(x=>x.symbol);
+
+    const pContext=position
+      ? positionContext(
+          position,
+          finalCollected.find(x=>x.symbol===position.symbol).payload.realtime
+        )
+      : null;
+
+    const payload={
+      schemaVersion:2,
+      analysisAsOf:iso(snapshotAsOf),
+      requestedSymbols:targets,
+      analyzedSymbols:finalTargets,
+
+      assets:finalCollected.map(x=>x.payload),
+
+      relativeComparison:finalCollected.length===2
+        ? relativeComparison(finalCollected[0],finalCollected[1])
+        : null,
+
+      previousReview:review.payload,
+      userPosition:pContext,
+      dataFailures:failures,
+
+      rules:{
+        actualTradesVerified:false,
+        noAutomaticOrders:true,
+        historicalReviewUsesCompleted4h:true,
+        currentReportIsStatic:true,
+        planActivationStartsAfterGeneration:true
+      }
+    };
+
+    el('reportMeta').textContent='v2 · '+model+' 종합 분석 중';
+    el('report').textContent=
+      '완료 봉 지표·최신 수급 요약·이전 계획 판정을 전송했습니다.\n\n'+
+      '원시 1년 캔들과 전체 체결 로그는 OpenAI에 보내지 않습니다.';
+
+    const response=await callOpenAI(key,model,payload);
+    const createdAt=marketNow();
+
+    // 생성 이후부터 계획 유효. 스냅샷 시각으로 소급하지 않음.
+    const scenarios=validateAIResult(
+      response.parsed,finalTargets,review.payload,createdAt
+    );
+
+    const meta={snapshotAsOf,createdAt};
+
+    const reportText=formatReport(
+      response.parsed,scenarios,review.payload,meta,pContext
+    );
+
+    completedRecord={
+      schemaVersion:2,
+      id:uuid(),
+      createdAt,
+      snapshotAsOf,
+      symbols:finalTargets,
+      model,
+      promptVersion:'v2.0',
+      ruleVersion:'completed-4h-touch-v1',
+
+      positionId:position?.positionId || null,
+      positionSnapshot:pContext,
+
+      features:payload.assets,
+      relativeComparison:payload.relativeComparison,
+
+      scenarios,
+      reviewOfPrevious:review.payload,
+      output:response.parsed,
+
+      reportText,
+      usage:response.usage || null,
+      responseId:response.responseId || null,
+
+      status:'complete',
+      planActivatedAt:createdAt
+    };
+
+    // 화면 결과는 먼저 보존. 저장 실패 시 결과를 지우지 않음.
+    el('reportMeta').textContent=
+      finalTargets.map(shortName).join(' + ')+
+      ' · '+model+' · 생성 '+timeText(createdAt);
+
+    el('report').textContent=reportText;
+
+    el('kv2Usage').textContent=usageText(response.usage,model);
+    el('kv2Usage').style.whiteSpace='pre-wrap';
+
+    await dbSaveAnalysis(completedRecord,review.evaluations);
+    await reloadHistory(completedRecord.id);
+
+    el('kv2DBStatus').textContent=
+      '분석 원본·구조화 계획·이전 판정을 저장했습니다.';
+
+    el('aiError').textContent=failures.length
+      ? '일부 데이터 제한: '+failures.join(' / ')
+      : '';
+
+  }catch(e){
+    el('aiError').textContent=errorText(e);
+
+    if(completedRecord){
+      el('kv2DBStatus').textContent=
+        '분석은 생성됐지만 저장하지 못했습니다. 현재 리포트를 별도로 복사하세요.';
+      el('report').textContent=
+        completedRecord.reportText+
+        '\n\n[저장 오류]\n'+errorText(e)+
+        '\n이 결과는 다음 자동 복기에서 누락될 수 있습니다.';
+    }else{
+      el('reportMeta').textContent='v2 · 분석 미완료';
+      el('report').textContent=
+        '분석을 완료하지 못했습니다.\n\n'+errorText(e)+
+        '\n\n불완전하거나 검증되지 않은 새 계획은 저장·활성화하지 않았습니다.'+
+        '\nOpenAI 요청 이후 오류가 발생했다면 이미 처리된 토큰 비용은 발생할 수 있습니다.';
+    }
+  }finally{
+    key='';
+    aiBusy=false;
+    lockedSymbols=[];
+    el('analyze').disabled=false;
+    repaint();
+  }
+};
+
+/* =========================================================
+ 16. 초기화 · 주기 갱신 · 탭 상태
+========================================================= */
+
+try{
+  await syncTime();
+}catch(e){
+  lastFeedError=errorText(e);
+}
+
+for(const symbol of trackedSymbols()){
+  await primeSymbol(symbol);
+}
+
+connectSocket();
+repaint();
+
+let lastTargetKey=trackedSymbols().join('|');
+
+setInterval(()=>{
+  if(suspended || document.hidden) return;
+
+  const nextTargets=trackedSymbols().join('|');
+  const nextStreams=buildStreamNames().join('/');
+
+  if(nextTargets!==lastTargetKey){
+    lastTargetKey=nextTargets;
+
+    for(const symbol of trackedSymbols()){
+      primeSymbol(symbol).catch(e=>{
+        lastFeedError=errorText(e);
+      });
+    }
+  }
+
+  if(nextStreams!==desiredStreamKey){
+    connectSocket();
+  }
+
+  // 메시지 없는 연결을 정상으로 방치하지 않음.
+  if(socketOpen && Date.now()-lastSocketMessageAt>20000){
+    lastFeedError='스트림 수신 지연 감지 · 재연결';
+    connectSocket();
+  }
+
+  repaint();
+},1000);
+
+setInterval(()=>{
+  if(suspended || document.hidden) return;
+
+  for(const symbol of trackedSymbols()){
+    refreshOI(symbol);
+
+    // 스트림 장애 시 현재 마크가격만 REST로 보완.
+    // 체결 흐름은 복구됐다고 간주하지 않음.
+    const s=stateFor(symbol);
+
+    if(
+      (!socketOpen || Date.now()-lastSocketMessageAt>15000) &&
+      Date.now()-s.premiumFetchedAt>12000
+    ){
+      refreshPremium(symbol).catch(e=>{
+        lastFeedError=errorText(e);
+      });
+    }
+  }
+},CFG.OI_POLL_MS);
+
+setInterval(()=>{
+  if(suspended || document.hidden) return;
+
+  syncTime().catch(e=>{
+    lastFeedError=errorText(e);
+  });
+},300000);
+
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden){
+    // 브라우저 백그라운드 누락을 완전 관측으로 취급하지 않음.
+    suspended=true;
+    stopSocket();
+
+    for(const symbol of trackedSymbols()) resetFlow(symbol,true);
+  }else{
+    suspended=false;
+
+    syncTime().catch(e=>{
+      lastFeedError=errorText(e);
+    });
+
+    for(const symbol of trackedSymbols()){
+      primeSymbol(symbol).catch(e=>{
+        lastFeedError=errorText(e);
+      });
+    }
+
+    connectSocket();
+    repaint();
+  }
+});
+
+window.addEventListener('pagehide',()=>{
+  suspended=true;
+  stopSocket();
+});
+
+window.addEventListener('pageshow',event=>{
+  if(event.persisted){
+    suspended=false;
+    connectSocket();
+
+    for(const symbol of trackedSymbols()){
+      primeSymbol(symbol).catch(e=>{
+        lastFeedError=errorText(e);
+      });
+    }
+  }
+});
+
+/* 개발자 도구에서 키 없이 상태 점검 가능 */
+window.KaijiLiveV2 = Object.freeze({
+  version:'2.0',
+  snapshot:symbol=>liveSnapshot(symbol || currentCoin),
+
+  diagnostics:()=>({
+    version:'2.0',
+    databaseReady:!!db,
+    databaseError:dbError || null,
+    socketOpen,
+    lastSocketMessageAt,
+    serverOffset,
+    trackedSymbols:trackedSymbols(),
+    marketRequestCount,
+    lastFeedError,
+    analysisCount:savedAnalyses.length
+  })
+});
+
+})().catch(error=>{
+  console.error('카이지 v2 초기화 실패:',error);
+
+  const node=document.getElementById('aiError');
+  if(node){
+    node.textContent=
+      '실시간 통합 기능 초기화 실패: '+
+      (error instanceof Error?error.message:String(error));
+  }
+});
+</script>
 </body>
 </html>
