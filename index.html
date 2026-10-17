@@ -6676,8 +6676,13 @@ for(const symbol of trackedSymbols()){
 connectSocket();
 repaint();
 
-let lastTargetKey=trackedSymbols().join('|');
+el('analyze').disabled = !db;
 
+if(!db){
+  el('analyze').textContent = '기록 저장소 오류 · 새로고침 필요';
+}
+
+let lastTargetKey=trackedSymbols().join('|');
 setInterval(()=>{
   if(suspended || document.hidden) return;
 
