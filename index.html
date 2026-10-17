@@ -5343,8 +5343,12 @@ function positionContext(p,live){
  11. 이전 계획 자동 판정
 ========================================================= */
 
-const terminalStatuses=new Set([
-  'TARGET_REACHED','INVALIDATED','EXPIRED','AMBIGUOUS'
+const terminalStatuses = new Set([
+  'TARGET_REACHED',
+  'INVALIDATED',
+  'EXPIRED',
+  'MISSED_ENTRY',
+  'AMBIGUOUS'
 ]);
 
 const historicalRanges=new Map();
