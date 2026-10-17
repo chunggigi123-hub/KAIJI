@@ -1873,11 +1873,24 @@ $('analyze').onclick=async()=>{
       (limited.length?'[수집 단계에서 확인된 제한]\n'+limited.join('\n')+'\n\n':'')+
       result.text+
       (result.incomplete?'\n\n[알림] 출력 제한 등으로 분석이 일부 생략되었을 수 있습니다.':'');
-    $('usage').textContent=result.usage
+        $('usage').textContent=result.usage
       ?'입력 '+fmt(result.usage.input_tokens,0)+' / 출력 '+fmt(result.usage.output_tokens,0)+
         ' tokens · 실제 비용은 OpenAI 사용량 화면에서 확인하세요.'
       :'토큰 사용량 정보 없음';
+
     $('aiError').textContent='';
+
+    // 분석 결과만 저장합니다. API 키는 저장하지 않습니다.
+    saveAnalysisHistory({
+      symbols:targets,
+      model,
+      asOf,
+      createdAt:Date.now(),
+      meta:$('reportMeta').textContent,
+      text:$('report').textContent,
+      usage:$('usage').textContent,
+      incomplete:result.incomplete
+    });
   }catch(e){
     $('aiError').textContent=e.message;
     $('reportMeta').textContent='분석 미완료';
