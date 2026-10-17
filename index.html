@@ -3834,7 +3834,40 @@ function dbSaveAnalysis(record, evaluations){
     tx.onabort = ()=>reject(tx.error || new Error('기록 저장 중단'));
   });
 }
+function dbSaveEvaluations(evaluations){
+return new Promise((resolve, reject)=>{
+if(!db){
+reject(new Error('기록 저장소를 사용할 수 없습니다.'));
+return;
+}
 
+if(!evaluations.length){
+resolve();
+return;
+}
+
+const tx = db.transaction(
+'evaluations',
+'readwrite'
+);
+
+const store = tx.objectStore('evaluations');
+
+for(const item of evaluations){
+store.put(item);
+}
+
+tx.oncomplete = ()=>resolve();
+
+tx.onerror = ()=>reject(
+tx.error || new Error('이전 계획 판정 저장 실패')
+);
+
+tx.onabort = ()=>reject(
+tx.error || new Error('이전 계획 판정 저장 중단')
+);
+});
+}
 async function reloadHistory(preferredId){
   if(!db) return;
 
