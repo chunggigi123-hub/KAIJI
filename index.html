@@ -3531,7 +3531,10 @@ if(requiredFunctions.some(x => x !== 'function')){
   console.error('카이지 v2: 기존 분석기 함수가 없습니다.');
   return;
 }
-
+// v2 준비 중 구형 분석 함수가 실행되지 않도록 차단.
+el('analyze').onclick = null;
+el('analyze').disabled = true;
+el('analyze').textContent = '통합 분석 기능 초기화 중…';
 const uuid = () =>
   window.crypto?.randomUUID?.() ||
   Date.now().toString(36) + '-' + Math.random().toString(36).slice(2);
