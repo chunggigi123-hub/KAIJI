@@ -3471,10 +3471,28 @@ window.addEventListener('pageshow',()=>{
 
       render();
       message('거래 기록장을 초기화했습니다.');
-    }catch{
+        }catch{
       message('기록 삭제에 실패했습니다.',true);
     }
   };
+
+  window.addEventListener('storage', event=>{
+    if(event.storageArea !== localStorage) return;
+
+    if(event.key !== KEY && event.key !== null){
+      return;
+    }
+
+    storageReady = false;
+    render();
+
+    message(
+      '다른 탭에서 거래 기록이 변경되었습니다. ' +
+      '덮어쓰기를 막기 위해 이 탭의 기록 변경을 중지했습니다. ' +
+      '입력 중인 종료값이나 메모를 복사한 뒤 페이지를 새로고침하세요.',
+      true
+    );
+  });
 
   render();
 })();
