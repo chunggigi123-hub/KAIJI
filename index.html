@@ -4274,55 +4274,100 @@ function parseCandles(rows){
 
 async function ensureCandles(symbol, interval){
   const key = symbol+'|'+interval;
-  const cached = candleCache.get(key);
+  async function ensureCandles(symbol, interval){
+const key = symbol + '|' + interval;
+const cached = candleCache.get(key);
 
-  const live = cached &&
-    Date.now()-cached.lastEventAt<15000;
+const live = cached &&
+Date.now() - cached.lastEventAt < 15000;
 
-  const recentlyFetched = cached &&
-    Date.now()-cached.fetchedAt<55000;
+const recentlyFetched = cached &&
+Date.now() - cached.fetchedAt < 55000;
 
-  if(cached && (live || recentlyFetched)) return cached.rows;
-  if(candleLoads.has(key)) return candleLoads.get(key);
+if(cached && (live || recentlyFetched)){
+return cached.rows;
+}
 
-  const work = (async()=>{
-    const limit = interval==='4h'?650:400;
+if(candleLoads.has(key)){
+return candleLoads.get(key);
+}
 
-    const rows = parseCandles(await marketJSON(
-      '/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+
-      '&interval='+interval+'&limit='+limit
-    ));
+const work = (async()=>{
+const limit = interval === '4h' ? 650 : 400;
 
-    // REST 요청 중 받은 더 최신 스트림 봉을 보존.
-    const current = candleCache.get(key);
-    const merged = new Map(rows.map(c=>[c.time,c]));
+// 요청을 시작한 시점의 스트림 갱신 순서.
+const requestSequence = candleUpdateSequence;
 
-    if(current){
-      for(const c of current.rows){
-        if(c.time>=rows.at(-1).time) merged.set(c.time,c);
-      }
-    }
+const rows = parseCandles(await marketJSON(
+'/fapi/v1/klines?symbol=' + encodeURIComponent(symbol) +
+'&interval=' + interval +
+'&limit=' + limit
+));
+const current = candleCache.get(key);
+const merged = new Map(rows.map(c => [c.time, c]));
+const versions = new Map();
 
-    const all = [...merged.values()]
-      .sort((a,b)=>a.time-b.time)
-      .slice(-limit);
+if(current){
+const currentVersions =
+current.streamVersions || new Map();
 
-    candleCache.set(key,{
-      rows:all,
-      fetchedAt:Date.now(),
-      lastEventAt:current?.lastEventAt || 0
-    });
+for(const c of current.rows){
+const version = currentVersions.get(c.time) || 0;
 
-    return all;
-  })();
+// REST 요청을 시작한 이후 들어온 스트림 봉만 우선한다.
+// 예전 캐시 봉으로 새 REST 결과를 덮어쓰지 않는다.
+if(version > requestSequence){
+merged.set(c.time, c);
+versions.set(c.time, version);
+}
+}
+}
 
-  candleLoads.set(key,work);
+const all = [...merged.values()]
+.sort((a,b) => a.time - b.time)
+.slice(-limit);
 
-  try{
-    return await work;
-  }finally{
-    candleLoads.delete(key);
-  }
+const retainedTimes = new Set(all.map(c => c.time));
+
+for(const time of versions.keys()){
+if(!retainedTimes.has(time)){
+versions.delete(time);
+
+
+
+
+
+
+
+
+
+
+
+}
+}
+
+candleCache.set(key, {
+rows: all,
+fetchedAt: Date.now(),
+
+// 요청 이후 실제 스트림 업데이트가 있었을 때만 유지.
+lastEventAt: versions.size
+? current.lastEventAt
+: 0,
+
+streamVersions: versions
+});
+
+return all;
+})();
+
+candleLoads.set(key, work);
+
+try{
+return await work;
+}finally{
+candleLoads.delete(key);
+}
 }
 
 function updateKline(symbol,k){
@@ -4371,7 +4416,22 @@ function updateKline(symbol,k){
     return;
   }
 
-  if(rows.length>(interval==='4h'?650:400)) rows.shift();
+  if(!cache.streamVersions){
+    cache.streamVersions = new Map();
+  }
+
+  cache.streamVersions.set(
+    c.time,
+    ++candleUpdateSequence
+  );
+
+  const maxRows = interval === '4h' ? 650 : 400;
+
+  while(rows.length > maxRows){
+    const removed = rows.shift();
+    cache.streamVersions.delete(removed.time);
+  }
+
   cache.lastEventAt = Date.now();
 }
 
