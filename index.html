@@ -2679,23 +2679,27 @@ window.addEventListener('pageshow',()=>{
 
   /* ---------- 저장소 쓰기 ---------- */
 
-  window.addEventListener('storage', event=>{
-    // localStorage.clear()가 실행된 경우 key는 null이다.
-    if(event.key !== KEY && event.key !== null){
+    window.addEventListener('storage', event=>{
+    if(event.storageArea !== localStorage) return;
+
+    if(
+      event.key !== STORAGE_KEY &&
+      event.key !== null
+    ){
       return;
     }
 
     storageReady = false;
-
     render();
 
-    message(
-      '다른 탭에서 거래 기록이 변경되었습니다. ' +
-      '이전 상태로 덮어쓰지 않도록 이 탭의 기록 변경을 중지했습니다. ' +
-      '입력 중인 종료값이나 메모를 복사한 뒤 페이지를 새로고침하세요.',
+    notify(
+      '다른 탭에서 분석 기록이 변경되었습니다. ' +
+      '덮어쓰기를 막기 위해 이 탭의 기록 변경을 중지했습니다. ' +
+      '필요한 내용을 복사한 뒤 페이지를 새로고침하세요.',
       true
     );
   });
+  
   function commit(next){
     if(!storageReady){
       notify('저장소 읽기 오류로 자동 저장이 중지된 상태입니다.',true);
