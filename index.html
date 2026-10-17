@@ -6394,7 +6394,17 @@ el('analyze').onclick=async()=>{
       '과거 계획의 발동·목표·무효화·기한을 코드로 확인하고 있습니다.\n\n'+
       '조건 미발동은 실패로 처리하지 않으며, 같은 봉에서 양쪽 가격에 닿으면 순서를 추측하지 않습니다.';
 
-    const review=await reviewPrevious(analyzedSymbols,beforeReview);
+    const review = await reviewPrevious(
+      analyzedSymbols,
+      beforeReview
+    );
+
+    // OpenAI 요청 전에 이전 계획 판정을 먼저 보존한다.
+    await dbSaveEvaluations(review.evaluations);
+    await reloadHistory();
+
+    el('kv2DBStatus').textContent =
+      '이전 계획 판정을 먼저 저장했습니다. 새 AI 분석을 준비합니다.';
 
     // 복기 조회에 시간이 걸렸다면 최신 마크가격을 다시 확인.
     for(const c of collected){
