@@ -1236,11 +1236,29 @@ function readPositionForm(){
 }
 function loadPositionForm(){
   const p=app.positions[selected];
-  const defaults={side:1,margin:'',leverage:20,entry:'',quantity:'',target:'',stop:'',feeIn:.05,feeOut:.05,mmr:.5};
-  for(const id of FIELD_IDS) $(id).value=p?(p[id]??''):defaults[id];
-  dirty=false;$('positionMessage').textContent='';
+  const defaults={
+    side:1,
+    margin:'',
+    leverage:20,
+    entry:'',
+    quantity:'',
+    target:'',
+    stop:'',
+    feeIn:.05,
+    feeOut:.05,
+    mmr:.5
+  };
+
+  for(const id of FIELD_IDS){
+    $(id).value=p?(p[id]??''):defaults[id];
+  }
+
+  dirty=false;
+  $('positionMessage').textContent='';
+  $('exitPrice').value='';
   $('positionSymbol').textContent=selected;
   $('restorePosition').disabled=!p;
+
   renderStorage();
 }
 
