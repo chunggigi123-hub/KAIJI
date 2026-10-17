@@ -5270,80 +5270,173 @@ async function collectCompact(symbol,asOf){
 ========================================================= */
 
 function positionFromUI(symbol){
-  const source=el('kv2PositionSource').value;
+  const source = el('kv2PositionSource').value;
 
-  if(source==='none') return null;
+  if(source === 'none'){
+    return null;
+  }
 
-  if(source==='calculator'){
-    const p=readPositionSnapshot(symbol);
+  // 계산기 모드는 기존 검증을 그대로 사용한다.
+  if(source === 'calculator'){
+    const p = readPositionSnapshot(symbol);
 
     if(!p){
       throw new Error(
-        '현재 계산기 포지션 연결은 BTC 이외 선택 코인 기준입니다. '+
-        'BTC는 시장만 분석하거나 별도로 포지션 연결 코드를 확장해야 합니다.'
+        '계산기 포지션 연결은 BTC 이외 선택 코인 기준입니다. ' +
+        'BTC는 포지션 없이 시장만 분석하세요.'
       );
     }
 
-    return {...p,positionId:null,inputSource:'calculator'};
+    return {
+      ...p,
+      positionId: null,
+      inputSource: 'calculator'
+    };
+  }
+
+  if(source !== 'journal'){
+    throw new Error('포지션 분석 기준을 다시 선택하세요.');
   }
 
   let journal;
 
   try{
-    journal=JSON.parse(localStorage.getItem('kaiji-trade-journal-v1'));
+    journal = JSON.parse(
+      localStorage.getItem('kaiji-trade-journal-v1')
+    );
   }catch{
     throw new Error('거래 기록장을 읽지 못했습니다.');
   }
 
-  const p=journal?.active;
+  const p = journal?.active;
 
-  if(!p) throw new Error('거래 기록장에 진행 포지션이 없습니다.');
-
-  if(p.symbol!==symbol){
+  if(journal?.version !== 1 || !p){
     throw new Error(
-      '진행 포지션은 '+p.symbol+'입니다. 해당 코인을 선택하세요.'
+      '거래 기록장에 유효한 진행 포지션이 없습니다.'
     );
   }
 
-  const input=readPositionSnapshot(symbol);
-
-  if(!input) throw new Error('포지션 입력 연결을 확인하세요.');
-
-  if(
-    ![p.margin,p.leverage,p.entry,p.quantity,p.notional,p.feeIn,p.feeOut]
-      .every(finite) ||
-    ![1,-1].includes(p.direction) ||
-    p.margin<=0 || p.entry<=0 || p.quantity<=0 ||
-    p.notional<=0 || p.leverage<1 || p.leverage>125 ||
-    !Number.isInteger(p.leverage) ||
-    p.feeIn<0 || p.feeOut<0
-  ){
-    throw new Error('등록 포지션 데이터 형식이 올바르지 않습니다.');
+  if(p.symbol !== symbol){
+    throw new Error(
+      '진행 포지션은 ' + p.symbol +
+      '입니다. 관심 목록에서 해당 코인을 선택하세요.'
+    );
   }
 
-  if(input.maintenanceMarginPercent/100>=1/p.leverage){
-    throw new Error('등록 레버리지와 입력 유지증거금률이 충돌합니다.');
+  const positionNumbers = [
+    p.margin,
+    p.leverage,
+    p.entry,
+    p.quantity,
+    p.notional,
+    p.feeIn,
+    p.feeOut,
+    p.registeredAt
+  ];
+
+  if(
+    typeof p.id !== 'string' ||
+    !positionNumbers.every(finite) ||
+    ![1, -1].includes(p.direction) ||
+    p.margin <= 0 ||
+    p.entry <= 0 ||
+    p.quantity <= 0 ||
+    p.notional <= 0 ||
+    !Number.isInteger(p.leverage) ||
+    p.leverage < 1 ||
+    p.leverage > 125 ||
+    p.feeIn < 0 ||
+    p.feeIn > 1 ||
+    p.feeOut < 0 ||
+    p.feeOut > 1 ||
+    Number.isNaN(new Date(p.registeredAt).getTime())
+  ){
+    throw new Error(
+      '등록 포지션 데이터 형식이 올바르지 않습니다.'
+      );
+  }
+
+  // 기록장 모드에서는 계산기의 목표·손절·유지증거금률만 읽는다.
+  function readPlanNumber(id, optional=false){
+    const node = el(id);
+
+    if(node.validity.badInput){
+      throw new Error('목표·손절·유지증거금률에 숫자를 입력하세요.');
+    }
+
+    const raw = node.value.trim();
+
+    if(raw === ''){
+      return optional ? null : NaN;
+    }
+
+    return Number(raw);
+  }
+
+  const target = readPlanNumber('exit');
+  const stop = readPlanNumber('stopLoss', true);
+  const mmr = readPlanNumber('mmr');
+
+  if(
+    !finite(target) ||
+    target <= 0 ||
+    !finite(mmr) ||
+    mmr < 0 ||
+    mmr > 10 ||
+    (
+      stop !== null &&
+      (!finite(stop) || stop <= 0)
+    )
+  ){
+    throw new Error(
+      '양수 목표가·손절가와 0~10% 유지증거금률을 확인하세요. ' +
+      '손절가는 비워 둘 수 있습니다.'
+    );
+  }
+
+  if(mmr / 100 >= 1 / p.leverage){
+    throw new Error(
+      '등록 레버리지와 입력 유지증거금률이 충돌합니다. ' +
+      '계산기의 유지증거금률을 확인하세요.'
+    );
   }
 
   return {
-    ...input,
-    positionId:p.id,
-    inputSource:'journal',
-    side:p.direction===1?'LONG':'SHORT',
-    direction:p.direction,
-    marginUSDT:p.margin,
-    leverage:p.leverage,
-    entryPrice:p.entry,
-    feeInPercent:p.feeIn,
-    feeOutPercent:p.feeOut,
-    entryNotionalUSDT:p.notional,
-    estimatedQuantity:p.quantity,
-    registeredAt:p.registeredAt,
-    note:'목표·손절·가정 유지증거금률은 현재 계산기에서 확인한 값'
+    symbol: p.symbol,
+    side: p.direction === 1 ? 'LONG' : 'SHORT',
+    direction: p.direction,
+
+    positionId: p.id,
+    inputSource: 'journal',
+
+    marginUSDT: p.margin,
+    leverage: p.leverage,
+    entryPrice: p.entry,
+
+    userTargetPrice: target,
+    userStopPrice: stop,
+
+    feeInPercent: p.feeIn,
+    feeOutPercent: p.feeOut,
+    maintenanceMarginPercent: mmr,
+
+    entryNotionalUSDT: p.notional,
+    estimatedQuantity: p.quantity,
+
+    horizonDays: {
+      min: 7,
+      max: 30
+    },
+
+    registeredAt: p.registeredAt,
+    capturedAtUTC: new Date().toISOString(),
+
+    note:
+      '진입가·방향·증거금·레버리지·수량·수수료는 기록장 기준. ' +
+      '목표·손절·가정 유지증거금률은 현재 계산기 입력 기준.'
   };
 }
-
-function positionContext(p,live){
+  function positionContext(p,live){
   if(!p) return null;
 
   if(live.mark.status!=='fresh'){
