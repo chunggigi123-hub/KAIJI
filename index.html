@@ -289,7 +289,50 @@ footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
         <button id="savePosition" class="primary">보유 포지션 저장</button>
         <button id="restorePosition">저장값 다시 불러오기</button>
       </div>
-      <button id="clearPosition" class="link">종료한 포지션 · 등록 삭제</button>
+            <div class="chart-card" style="margin-top:16px">
+        <h3>포지션 종료 기록</h3>
+
+        <p class="tiny muted">
+          실제 거래소에서 종료한 평균 체결 가격을 입력하세요.
+          저장된 보유 수량 전체를 종료한 것으로 기록합니다.
+        </p>
+
+        <label for="exitPrice">실제 종료 가격</label>
+        <input
+          id="exitPrice"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="실제 평균 종료가 입력">
+
+        <div id="closePreview" class="notice" role="status">
+          종료 가격을 입력하면 손익을 미리 보여드립니다.
+        </div>
+
+        <button
+          id="closePosition"
+          class="solid"
+          style="width:100%;margin-top:12px">
+          포지션 종료 · 손익 기록
+        </button>
+
+        <p class="tiny muted">
+          실제 주문 기능이 아닙니다.
+          종료 기록을 저장하면 보유 등록에서 제거됩니다.
+        </p>
+      </div>
+
+      <details>
+        <summary>잘못 등록한 포지션 삭제</summary>
+        <p class="tiny muted">
+          입력 오류를 정리할 때만 사용하세요.
+          종료 내역과 손익을 기록하지 않습니다.
+        </p>
+        <button id="clearPosition" class="link">
+          손익 기록 없이 등록만 삭제
+        </button>
+      </details>
+
       <p id="positionMessage" class="error" role="status"></p>
     </div>
 
