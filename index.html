@@ -429,7 +429,13 @@ let aiBusy=false, lastAI=0, running=false, pendingRefresh=false;
 let clockOffset=0, clockAt=0, clockRTT=Infinity;
 let blockedUntil=0, networkMessage='', networkMessageAt=0;
 let storageWritable=true, storageNotice='';
-let app={version:3,coins:[...DEFAULT_COINS],selected:'BTCUSDT',positions:{}};
+let app={
+  version:3,
+  coins:[...DEFAULT_COINS],
+  selected:'BTCUSDT',
+  positions:{},
+  closedTrades:[]
+};
 const markets=new Map(), sockets=new Map(), tickers=new Map();
 const inflight=new Map();
 let requestActive=0;
