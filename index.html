@@ -2164,7 +2164,512 @@ $('closePosition').onclick=()=>{
     $('positionMessage').textContent=e.message;
   }
 };
+/* ======================== 분석 기록 저장 / 복원 ======================== */
 
+// 기존 보유 포지션 저장소와 분리합니다.
+const ANALYSIS_STORAGE_KEY='kaiji-analysis-history-v1';
+
+let analysisHistory=[];
+let analysisHistoryReady=false;
+let openedAnalysisId=null;
+
+function analysisHistoryMessage(message,isError=false){
+  const node=$('analysisHistoryMessage');
+  if(!node) return;
+
+  node.textContent=message;
+  node.classList.toggle('risk',isError);
+}
+
+// 저장·복원할 항목만 골라서 읽습니다.
+// API 키와 기타 불필요한 필드는 보관하지 않습니다.
+function normalizeAnalysisRecord(record){
+  if(
+    !record||
+    typeof record!=='object'||
+    typeof record.id!=='string'||!record.id||
+    !Array.isArray(record.symbols)||
+    !record.symbols.length||
+    !record.symbols.every(validSymbol)||
+    typeof record.model!=='string'||
+    !finite(record.asOf)||record.asOf<=0||
+    !finite(record.createdAt)||record.createdAt<=0||
+    typeof record.meta!=='string'||
+    typeof record.text!=='string'||!record.text.trim()||
+    typeof record.usage!=='string'||
+    typeof record.incomplete!=='boolean'
+  ){
+    throw new Error('분석 기록 형식이 올바르지 않습니다.');
+  }
+
+  return {
+    id:record.id,
+    symbols:[...record.symbols],
+    model:record.model,
+    asOf:record.asOf,
+    createdAt:record.createdAt,
+    meta:record.meta,
+    text:record.text,
+    usage:record.usage,
+    incomplete:record.incomplete
+  };
+}
+
+function parseAnalysisHistory(raw){
+  const data=JSON.parse(raw);
+
+  if(
+    !data||
+    data.version!==1||
+    !Array.isArray(data.records)
+  ){
+    throw new Error('지원하지 않는 분석 기록 파일입니다.');
+  }
+
+  const records=data.records.map(normalizeAnalysisRecord);
+  const ids=new Set();
+
+  for(const record of records){
+    if(ids.has(record.id)){
+      throw new Error('중복된 분석 기록 ID가 있습니다.');
+    }
+    ids.add(record.id);
+  }
+
+  return records.sort((a,b)=>b.createdAt-a.createdAt);
+}
+
+function readAnalysisHistory(){
+  const raw=localStorage.getItem(ANALYSIS_STORAGE_KEY);
+  return raw===null?[]:parseAnalysisHistory(raw);
+}
+
+function writeAnalysisHistory(records){
+  const sorted=[...records].sort((a,b)=>b.createdAt-a.createdAt);
+
+  // 저장 실패 시 메모리의 기존 기록도 변경하지 않습니다.
+  localStorage.setItem(
+    ANALYSIS_STORAGE_KEY,
+    JSON.stringify({
+      version:1,
+      records:sorted
+    })
+  );
+
+  analysisHistory=sorted;
+  analysisHistoryReady=true;
+}
+
+function renderAnalysisHistory(){
+  const select=$('analysisHistorySelect');
+  if(!select) return;
+
+  const previous=select.value;
+  select.replaceChildren();
+
+  const placeholder=document.createElement('option');
+  placeholder.value='';
+  placeholder.textContent=analysisHistory.length
+    ?'확인할 분석 기록을 선택하세요'
+    :'저장된 분석 기록이 없습니다';
+
+  select.append(placeholder);
+
+  for(const record of analysisHistory){
+    const option=document.createElement('option');
+
+    option.value=record.id;
+    option.textContent=
+      date(record.createdAt)+' · '+
+      record.symbols.map(name).join(' + ')+' · '+
+      record.model+
+      (record.incomplete?' · 일부 출력':'');
+
+    select.append(option);
+  }
+
+  if(analysisHistory.some(record=>record.id===previous)){
+    select.value=previous;
+  }else if(
+    openedAnalysisId&&
+    analysisHistory.some(record=>record.id===openedAnalysisId)
+  ){
+    select.value=openedAnalysisId;
+  }
+
+  $('analysisHistoryCount').textContent=
+    '저장 '+analysisHistory.length+'건';
+
+  select.disabled=!analysisHistory.length;
+
+  $('viewAnalysisHistory').disabled=!analysisHistory.length;
+  $('deleteAnalysisHistory').disabled=
+    !analysisHistoryReady||!analysisHistory.length;
+
+  // 저장소 읽기 실패 시 빈 파일로 잘못 백업하지 않습니다.
+  $('exportAnalysisHistory').disabled=
+    !analysisHistoryReady||!analysisHistory.length;
+
+  $('importAnalysisHistory').disabled=!analysisHistoryReady;
+}
+
+function showAnalysisHistory(id,scroll=false){
+  if(aiBusy){
+    analysisHistoryMessage(
+      '분석 중에는 이전 기록 열기를 잠시 기다려 주세요.'
+    );
+    return;
+  }
+
+  const record=analysisHistory.find(item=>item.id===id);
+
+  if(!record){
+    analysisHistoryMessage('확인할 분석 기록을 선택하세요.');
+    return;
+  }
+
+  openedAnalysisId=record.id;
+
+  $('reportMeta').textContent=
+    record.meta+' · 저장 기록 열람 / 현재 실시간 분석 아님';
+
+  // 저장된 분석은 HTML로 해석하지 않고 텍스트로 표시합니다.
+  $('report').textContent=record.text;
+  $('usage').textContent=record.usage;
+  $('aiError').textContent='';
+
+  $('analysisHistorySelect').value=record.id;
+
+  analysisHistoryMessage(
+    '저장된 분석을 불러왔습니다.\n'+
+    '대상: '+record.symbols.join(' + ')+
+    '\n데이터 기준: '+date(record.asOf)+
+    '\n생성 시각: '+date(record.createdAt)+
+    '\n과거 시점의 정적 기록입니다. 현재 시장·보유 설정은 변경하지 않습니다.'
+  );
+
+  if(scroll){
+    $('reportMeta').scrollIntoView({
+      behavior:'smooth',
+      block:'start'
+    });
+  }
+}
+
+function saveAnalysisHistory(data){
+  try{
+    const record=normalizeAnalysisRecord({
+      ...data,
+      id:globalThis.crypto?.randomUUID
+        ?globalThis.crypto.randomUUID()
+        :Date.now().toString(36)+'-'+
+          Math.random().toString(36).slice(2)
+    });
+
+    // 다른 탭에서 추가한 기록도 가능한 한 유지합니다.
+    // 읽기 오류가 있으면 덮어쓰지 않고 중지합니다.
+    const existing=readAnalysisHistory();
+
+    writeAnalysisHistory([record,...existing]);
+
+    openedAnalysisId=record.id;
+    renderAnalysisHistory();
+    $('analysisHistorySelect').value=record.id;
+
+    analysisHistoryMessage(
+      '분석 결과를 자동 저장했습니다. 총 '+
+      analysisHistory.length+'건입니다.\n'+
+      '새로고침 후에도 아래 목록에서 다시 열 수 있습니다.'
+    );
+  }catch(error){
+    analysisHistoryMessage(
+      '분석은 완료됐지만 기록 저장에 실패했습니다.\n'+
+      '현재 보고서는 화면에 남아 있습니다. 새로고침 전에 내용을 복사해 두세요.\n'+
+      '저장 공간·브라우저 저장 권한을 확인하세요. 기존 기록은 자동 삭제하지 않습니다.\n'+
+      error.message,
+      true
+    );
+  }
+}
+
+function downloadAnalysisBackup(){
+  try{
+    // 백업 시에도 현재 저장소의 최신 기록을 읽습니다.
+    analysisHistory=readAnalysisHistory();
+    renderAnalysisHistory();
+
+    if(!analysisHistory.length){
+      analysisHistoryMessage('백업할 분석 기록이 없습니다.');
+      return;
+    }
+
+    const blob=new Blob([
+      JSON.stringify({
+        version:1,
+        exportedAt:new Date().toISOString(),
+        records:analysisHistory
+      },null,2)
+    ],{
+      type:'application/json;charset=utf-8'
+    });
+
+    const url=URL.createObjectURL(blob);
+    const link=document.createElement('a');
+
+    link.href=url;
+    link.download=
+      'kaiji-analysis-history-'+
+      new Date().toISOString().slice(0,10)+'.json';
+
+    document.body.append(link);
+    link.click();
+    link.remove();
+
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+
+    analysisHistoryMessage(
+      '분석 기록 JSON 백업 다운로드를 요청했습니다.\n'+
+      '보고서에 포지션 정보가 포함될 수 있으므로 파일을 안전하게 보관하세요.'
+    );
+  }catch(error){
+    analysisHistoryMessage(
+      '백업 실패: '+error.message,
+      true
+    );
+  }
+}
+
+async function importAnalysisBackup(file){
+  if(!file) return;
+
+  try{
+    if(aiBusy){
+      throw new Error('분석이 끝난 후 기록을 복원하세요.');
+    }
+
+    const imported=parseAnalysisHistory(await file.text());
+
+    if(!imported.length){
+      analysisHistoryMessage('백업 파일에 분석 기록이 없습니다.');
+      return;
+    }
+
+    const existing=readAnalysisHistory();
+    const merged=new Map(
+      existing.map(record=>[record.id,record])
+    );
+
+    let added=0;
+
+    for(const record of imported){
+      // 같은 ID는 기존 기록을 유지합니다.
+      if(!merged.has(record.id)){
+        merged.set(record.id,record);
+        added++;
+      }
+    }
+
+    if(!added){
+      analysisHistory=existing;
+      renderAnalysisHistory();
+      analysisHistoryMessage('모두 이미 저장된 기록입니다.');
+      return;
+    }
+
+    if(!confirm(
+      '분석 기록 '+added+'건을 추가할까요?\n'+
+      '기존 기록과 보유 포지션은 삭제하거나 변경하지 않습니다.'
+    )) return;
+
+    writeAnalysisHistory([...merged.values()]);
+    renderAnalysisHistory();
+
+    analysisHistoryMessage(
+      '분석 기록 '+added+'건을 복원했습니다.\n'+
+      '목록에서 기록을 선택하고 열기 버튼을 누르세요.'
+    );
+  }catch(error){
+    analysisHistoryMessage(
+      '복원 실패: '+error.message+
+      '\n기존 분석 기록은 유지됩니다.',
+      true
+    );
+  }finally{
+    $('analysisHistoryFile').value='';
+  }
+}
+
+function initAnalysisHistory(){
+  const section=document.createElement('section');
+  section.className='panel';
+  section.id='analysisHistoryPanel';
+
+  // 고정된 화면 구성만 innerHTML로 만듭니다.
+  // 분석 결과·백업 데이터는 textContent로 표시합니다.
+  section.innerHTML=`
+    <div class="head wrap">
+      <h2><span class="number">05</span>이전 분석 기록</h2>
+      <span id="analysisHistoryCount" class="badge">저장 0건</span>
+    </div>
+
+    <p class="small muted">
+      완료된 분석을 이 브라우저에 자동 저장합니다.
+      새로고침하면 가장 최근 기록을 다시 표시합니다.
+    </p>
+
+    <label for="analysisHistorySelect">저장된 분석 선택 · 최신순</label>
+    <select id="analysisHistorySelect"></select>
+
+    <div class="row wrap" style="justify-content:flex-start;margin-top:12px">
+      <button id="viewAnalysisHistory" class="solid">선택 기록 열기</button>
+      <button id="deleteAnalysisHistory">선택 기록 삭제</button>
+      <button id="exportAnalysisHistory">분석 기록 JSON 백업</button>
+      <button id="importAnalysisHistory">백업 파일 복원</button>
+    </div>
+
+    <input
+      id="analysisHistoryFile"
+      type="file"
+      accept=".json,application/json"
+      hidden>
+
+    <div id="analysisHistoryMessage" class="notice" role="status"></div>
+
+    <p class="tiny muted">
+      API 키는 저장하지 않습니다.
+      기록을 열어도 현재 선택 코인이나 보유 포지션 설정은 바뀌지 않습니다.<br>
+      브라우저 데이터 삭제·시크릿 모드 종료·주소 변경 시
+      기록을 사용할 수 없을 수 있으니 주기적으로 백업하세요.
+    </p>
+  `;
+
+  $('report').closest('section').after(section);
+
+  $('viewAnalysisHistory').onclick=()=>{
+    showAnalysisHistory($('analysisHistorySelect').value,true);
+  };
+
+  $('deleteAnalysisHistory').onclick=()=>{
+    if(aiBusy){
+      analysisHistoryMessage('분석이 끝난 후 기록을 삭제하세요.');
+      return;
+    }
+
+    const id=$('analysisHistorySelect').value;
+    if(!id){
+      analysisHistoryMessage('삭제할 기록을 선택하세요.');
+      return;
+    }
+
+    try{
+      const existing=readAnalysisHistory();
+      const record=existing.find(item=>item.id===id);
+
+      if(!record){
+        analysisHistory=existing;
+        renderAnalysisHistory();
+        analysisHistoryMessage('이미 삭제되었거나 없는 기록입니다.');
+        return;
+      }
+
+      if(!confirm(
+        date(record.createdAt)+' · '+
+        record.symbols.join(' + ')+
+        '\n이 분석 기록을 삭제할까요?\n'+
+        '백업 파일이 없다면 복구할 수 없습니다.'
+      )) return;
+
+      writeAnalysisHistory(
+        existing.filter(item=>item.id!==id)
+      );
+
+      if(openedAnalysisId===id){
+        openedAnalysisId=null;
+        $('reportMeta').textContent=
+          '저장 목록에서 삭제된 분석 · 화면에만 남아 있음';
+      }
+
+      renderAnalysisHistory();
+
+      analysisHistoryMessage(
+        '선택한 분석 기록을 삭제했습니다. 보유 포지션과 종료 내역은 변경하지 않았습니다.'
+      );
+    }catch(error){
+      analysisHistoryMessage(
+        '삭제 실패: '+error.message,
+        true
+      );
+    }
+  };
+
+  $('exportAnalysisHistory').onclick=downloadAnalysisBackup;
+
+  $('importAnalysisHistory').onclick=()=>{
+    if(aiBusy){
+      analysisHistoryMessage('분석이 끝난 후 기록을 복원하세요.');
+      return;
+    }
+    $('analysisHistoryFile').click();
+  };
+
+  $('analysisHistoryFile').onchange=event=>{
+    importAnalysisBackup(event.target.files?.[0]);
+  };
+
+  try{
+    analysisHistory=readAnalysisHistory();
+    analysisHistoryReady=true;
+    renderAnalysisHistory();
+
+    if(analysisHistory.length){
+      showAnalysisHistory(analysisHistory[0].id);
+    }else{
+      analysisHistoryMessage(
+        '아직 저장된 분석이 없습니다. 다음 분석부터 자동 저장됩니다.'
+      );
+    }
+  }catch(error){
+    analysisHistoryReady=false;
+    renderAnalysisHistory();
+
+    analysisHistoryMessage(
+      '기존 분석 기록을 읽지 못했습니다.\n'+
+      '원본 보호를 위해 기존 자료를 덮어쓰지 않습니다.\n'+
+      error.message,
+      true
+    );
+  }
+}
+
+// 다른 탭에서 바뀐 분석 기록 목록을 반영합니다.
+// 현재 읽고 있는 보고서는 임의로 바꾸지 않습니다.
+window.addEventListener('storage',event=>{
+  if(
+    event.key!==ANALYSIS_STORAGE_KEY&&
+    event.key!==null
+  ) return;
+
+  try{
+    analysisHistory=readAnalysisHistory();
+    analysisHistoryReady=true;
+    renderAnalysisHistory();
+
+    analysisHistoryMessage(
+      '다른 탭의 변경 사항을 기록 목록에 반영했습니다.\n'+
+      '현재 화면의 보고서는 그대로 유지합니다.'
+    );
+  }catch(error){
+    analysisHistoryReady=false;
+    renderAnalysisHistory();
+
+    analysisHistoryMessage(
+      '분석 기록 동기화 실패: '+error.message,
+      true
+    );
+  }
+});
+
+initAnalysisHistory();
 /* ======================== 시작 / 복귀 ======================== */
 
 readStorage();
