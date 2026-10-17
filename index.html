@@ -4327,10 +4327,8 @@ function parseCandles(rows){
 }
 
 async function ensureCandles(symbol, interval){
-  const key = symbol+'|'+interval;
-  async function ensureCandles(symbol, interval){
-const key = symbol + '|' + interval;
-const cached = candleCache.get(key);
+  const key = symbol + '|' + interval;
+  const cached = candleCache.get(key);
 
 const live = cached &&
 Date.now() - cached.lastEventAt < 15000;
