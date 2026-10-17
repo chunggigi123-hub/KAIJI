@@ -1855,7 +1855,7 @@ $('analyze').onclick=async()=>{
         ?correlation(getMarket('BTCUSDT'),getMarket(selectedAtStart)):null,
       userPosition:position,
       noAutomaticOrders:true,
-      noAnalysisHistory:true,
+      noAnalysisHistory:false,
       reportIsStatic:true
     };
     const limited=assets.flatMap(a=>a.warnings.map(w=>a.symbol+': '+w));
