@@ -2306,6 +2306,16 @@ async function runFullScan(cfg){
       }
     }
 
+    // 우선 조건 충족 후보를 선택하지 못했더라도,
+    // 보관된 대안이 아직 최신이면 그 대안 1개를 선택한다.
+    if(
+      !selectedCandidate&&
+      alternativeCandidate&&
+      serverNow()<=alternativeCandidate.expiresAt
+    ){
+      selectedCandidate=alternativeCandidate;
+    }
+
     latestScan={
       status:selectedCandidate?'candidate':'no_candidate',
       message:selectedCandidate
