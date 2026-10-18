@@ -1494,87 +1494,392 @@ function scanForAI(r){
   return copy;
 }
 async function runScan(cfg){
-  scanResult=null;$('scanResult').textContent='';
-  $('scanStatus').textContent='선물 종목·거래대금 목록 확인 중…';
-  const rejections=[];
-  try{
-    await syncClock(true);
-    const [ex,tickers]=await Promise.all([exchangeInfo(true),publicJSON('/fapi/v1/ticker/24hr')]);
-    if(!Array.isArray(tickers))throw new Error('전체 거래대금 목록 오류');
-    const available=new Map(ex.symbols.filter(x=>
-      x.status==='TRADING'&&x.contractType==='PERPETUAL'&&x.quoteAsset==='USDT'&&
-      x.marginAsset==='USDT'&&validSymbol(x.symbol)&&Array.isArray(x.filters)
-    ).map(x=>[x.symbol,x]));
-    const universe=tickers.filter(x=>
-      available.has(x.symbol)&&!app.positions[x.symbol]&&
-      finite(Number(x.quoteVolume))&&Number(x.quoteVolume)>=50000000&&
-      finite(Number(x.closeTime))&&Math.abs(serverNow()-Number(x.closeTime))<=120000
-    ).sort((a,b)=>Number(b.quoteVolume)-Number(a.quoteVolume))
-      .slice(0,cfg.universe).map(x=>available.get(x.symbol));
-    if(!universe.length)throw new Error('거래대금·거래 상태·최신성 기준을 충족하는 종목이 없습니다.');
+  scanResult = null;
 
-    let done=0;
-    const raw=await Promise.all(universe.map(async meta=>{
-      try{
-        const [daily,h4]=await Promise.all([bars(meta.symbol,'1d',240),bars(meta.symbol,'4h',180)]);
-        return {meta,daily,h4};
-      }catch(e){rejections.push({symbol:meta.symbol,reason:'차트 수집 실패'});return null}
-      finally{
-        done++;$('scanStatus').textContent='완료 일봉·4시간봉 비교 준비 '+done+'/'+universe.length;
-      }
-    }));
-    await syncClock(true);
-    const asOf=serverNow(),technical=[];
-    for(const x of raw.filter(Boolean)){
-      const r=technicalCandidate(x.meta,x.daily,x.h4,asOf);
-      if(r.candidate)technical.push(r.candidate);
-      else rejections.push({symbol:x.meta.symbol,reason:r.reason});
-    }
-    technical.sort((a,b)=>b.score-a.score);
-    const finalists=technical.slice(0,5);
-    $('scanStatus').textContent='기술 통과 '+technical.length+'개 · 상위 '+finalists.length+'개 최신 수급·가격 검증 중…';
+  $('scanResult').textContent = '';
+  $('scanStatus').className = 'notice';
+  $('scanStatus').textContent = '전체 USDT 무기한 선물 목록 확인 중…';
 
-    const checked=await Promise.all(finalists.map(async c=>{
-      try{
-        const s=market(c.symbol);
-        s.minutes=[];s.flowFetched=0;
-        s.minutes=await bars(c.symbol,'1m',40);s.flowFetched=Date.now();
-        await loadPrices(c.symbol,true);
-        return c;
-      }catch(e){rejections.push({symbol:c.symbol,reason:'최종 수급 수집 실패'});return null}
-    }));
-    await syncClock(true);
-    const eligible=[];
-    for(const c of checked.filter(Boolean)){
-      const r=buildPlan(c,cfg);
-      if(r.candidate)eligible.push(r.candidate);
-      else rejections.push({symbol:c.symbol,reason:r.reason});
-    }
-    eligible.sort((a,b)=>b.score-a.score);
-    const counts=new Map();
-    for(const r of rejections)counts.set(r.reason,(counts.get(r.reason)||0)+1);
+  let cancelled = false;
+  let nextRequestAt = 0;
 
-    scanResult={
-      status:eligible.length?'candidate':'no_candidate',
-      message:eligible.length?'최종 검증 후보 중 규칙 점수가 가장 높은 후보':'모든 조건을 충족한 후보가 없습니다.',
-      scannedAt:serverNow(),configuration:cfg,
-      scope:{
-        scanned:universe.length,technicalPassed:technical.length,
-        finalChecked:finalists.length,eligible:eligible.length,
-        symbols:universe.map(x=>x.symbol),
-        finalCheckedSymbols:finalists.map(x=>x.symbol),
-        entireMarketOptimalityVerified:false
-      },
-      selectedCandidate:eligible[0]||null,
-      rejectionSummary:[...counts.entries()].map(([reason,count])=>({reason,count})).sort((a,b)=>b.count-a.count),
-      probabilityEstimated:false,automaticOrders:false
-    };
-  }catch(e){
-    scanResult={status:'unavailable',message:e.message,selectedCandidate:null,automaticOrders:false};
+  const cancelButton = $('scanCancel');
+
+  cancelButton.disabled = false;
+  cancelButton.onclick = () => {
+    cancelled = true;
+    cancelButton.disabled = true;
+    $('scanStatus').textContent =
+      '중지 요청을 받았습니다. 진행 중인 요청 종료 후 멈춥니다…';
+  };
+
+  const scope = {
+    listed: 0,
+    heldExcluded: 0,
+    unsupportedExcluded: 0,
+    totalToScan: 0,
+    scanned: 0,
+    chartSuccess: 0,
+    technicalPassed: 0,
+    finalChecked: 0,
+    eligible: 0,
+    rechecked: 0,
+    dataFailures: 0,
+
+    allSymbolsVisited: false,
+    serialNotSimultaneous: true,
+    entireMarketOptimalityVerified: false,
+
+    selectionMethod:
+      '전체 목록 순차 검증 후 조건 통과 후보를 당시 점수순으로 재검증하여 첫 유효 후보 선택'
+  };
+
+  const rejectionCounts = new Map();
+  const recheckFailures = [];
+
+  function reject(reason){
+    rejectionCounts.set(
+      reason,
+      (rejectionCounts.get(reason) || 0) + 1
+    );
   }
-  renderScan();return scanResult;
-}
 
+  function rejectionSummary(){
+    return [...rejectionCounts.entries()]
+      .map(([reason, count]) => ({reason, count}))
+      .sort((a, b) => b.count - a.count);
+  }
+
+  function checkRun(){
+    if(cancelled){
+      const error = new Error('사용자가 후보 탐색을 중지했습니다.');
+      error.scanFatal = true;
+      error.scanCancelled = true;
+      throw error;
+    }
+
+    if(document.hidden){
+      const error = new Error(
+        '화면이 백그라운드로 전환되어 탐색을 중지했습니다. ' +
+        '화면을 켠 상태에서 다시 실행하세요.'
+      );
+      error.scanFatal = true;
+      throw error;
+    }
+
+    if(Date.now() < blockedUntil){
+      const error = new Error(
+        'Binance 요청 제한으로 전체 탐색을 중지했습니다. ' +
+        '대기 시간이 지난 뒤 다시 실행하세요.'
+      );
+      error.scanFatal = true;
+      throw error;
+    }
+
+    if(!storageOK){
+      const error = new Error(
+        '저장소 상태가 변경되어 보유 종목 제외 여부를 신뢰할 수 없습니다. ' +
+        '새로고침 후 다시 탐색하세요.'
+      );
+      error.scanFatal = true;
+      throw error;
+    }
+  }
+
+  async function pace(){
+    checkRun();
+
+    // 종목별 시작 간격을 둔다.
+    // 기존 publicJSON의 동시 요청 제한도 그대로 적용된다.
+    const delay = Math.max(0, nextRequestAt - Date.now());
+
+    if(delay > 0) await wait(delay);
+
+    checkRun();
+    nextRequestAt = Date.now() + 1200;
+
+    // 전체 탐색이 길어져도 시각 검증이 만료되지 않도록 갱신.
+    if(!clockGood() || Date.now() - clockAt > 45000){
+      await syncClock(true);
+    }
+
+    checkRun();
+  }
+
+  async function inspectSymbol(meta, firstPass){
+    await pace();
+
+    const [daily, h4] = await Promise.all([
+      bars(meta.symbol, '1d', 240),
+      bars(meta.symbol, '4h', 180)
+    ]);
+
+    checkRun();
+
+    if(!clockGood() || Date.now() - clockAt > 45000){
+      await syncClock(true);
+    }
+
+    if(firstPass) scope.chartSuccess++;
+
+    const technical = technicalCandidate(
+      meta,
+      daily,
+      h4,
+      serverNow()
+    );
+
+    if(!technical.candidate){
+      return {
+        reason: technical.reason
+      };
+    }
+
+    if(firstPass){
+      scope.technicalPassed++;
+      scope.finalChecked++;
+    }
+
+    const s = market(meta.symbol);
+
+    // 이전 탐색의 수급을 재사용하지 않는다.
+    s.minutes = [];
+    s.flowFetched = 0;
+
+    await Promise.all([
+      (async () => {
+        s.minutes = await bars(meta.symbol, '1m', 40);
+        s.flowFetched = Date.now();
+      })(),
+
+      loadPrices(meta.symbol, true)
+    ]);
+
+    checkRun();
+
+    if(!clockGood()){
+      await syncClock(true);
+    }
+
+    // 현재 가격, 수급, 봉 기준시각,
+    // 주문 필터와 목표수익·허용손실을 모두 다시 확인한다.
+    return buildPlan(technical.candidate, cfg);
+  }
+
+  try{
+    checkRun();
+    await syncClock(true);
+
+    const exchange = await exchangeInfo(true);
+
+    const listed = exchange.symbols.filter(x =>
+      x.status === 'TRADING' &&
+      x.contractType === 'PERPETUAL' &&
+      x.quoteAsset === 'USDT' &&
+      x.marginAsset === 'USDT'
+    );
+
+    scope.listed = listed.length;
+
+    const supported = listed.filter(x =>
+      validSymbol(x.symbol) &&
+      Array.isArray(x.filters)
+    );
+
+    scope.unsupportedExcluded = listed.length - supported.length;
+
+    const heldSymbols = new Set(Object.keys(app.positions));
+
+    scope.heldExcluded = supported.filter(x =>
+      heldSymbols.has(x.symbol)
+    ).length;
+
+    // 거래대금 필터와 상위 N개 제한을 사용하지 않는다.
+    const universe = supported
+      .filter(x => !heldSymbols.has(x.symbol))
+      .sort((a, b) => a.symbol.localeCompare(b.symbol));
+
+    scope.totalToScan = universe.length;
+
+    if(!universe.length){
+      throw new Error('현재 신규 탐색 가능한 USDT 무기한 선물이 없습니다.');
+    }
+
+    const initialCandidates = [];
+
+    for(const meta of universe){
+      checkRun();
+
+      $('scanStatus').textContent = [
+        '전체 선물 순차 탐색 중',
+        '진행 ' + (scope.scanned + 1) + '/' + universe.length,
+        '현재 종목: ' + meta.symbol,
+        '기술 조건 통과: ' + scope.technicalPassed + '개',
+        '수익·손실·수급 조건 통과: ' + initialCandidates.length + '개',
+        '화면을 켠 상태로 기다려 주세요.'
+      ].join('\n');
+
+      try{
+        const result = await inspectSymbol(meta, true);
+
+        if(result.candidate){
+          initialCandidates.push({
+            symbol: meta.symbol,
+            plan: result.candidate
+          });
+        }else{
+          reject(result.reason || '후보 조건 미충족');
+        }
+
+      }catch(error){
+        if(error.scanFatal) throw error;
+
+        // 요청 제한·사용자 중지 상태라면 부분 결과를 추천하지 않는다.
+        checkRun();
+
+        scope.dataFailures++;
+        reject('자료 수집·검증 실패');
+
+      }finally{
+        scope.scanned++;
+      }
+    }
+
+    scope.allSymbolsVisited = true;
+    scope.eligible = initialCandidates.length;
+
+    initialCandidates.sort((a, b) =>
+      b.plan.score - a.plan.score
+    );
+
+    let selectedCandidate = null;
+
+    if(initialCandidates.length){
+      // 긴 탐색 도중 거래 상태가 바뀌었을 수 있으므로 목록도 갱신.
+      checkRun();
+      await syncClock(true);
+
+      const latestExchange = await exchangeInfo(true);
+
+      const latestMeta = new Map(
+        latestExchange.symbols
+          .filter(x =>
+            x.status === 'TRADING' &&
+            x.contractType === 'PERPETUAL' &&
+            x.quoteAsset === 'USDT' &&
+            x.marginAsset === 'USDT' &&
+            validSymbol(x.symbol) &&
+            Array.isArray(x.filters)
+          )
+          .map(x => [x.symbol, x])
+      );
+
+      // 예전 가격으로 추천하지 않는다.
+      // 초기 점수순으로 차트·가격·수급·손익을 다시 확인한다.
+      for(const item of initialCandidates){
+        checkRun();
+
+        scope.rechecked++;
+
+        $('scanStatus').textContent = [
+          '전체 목록 순회 완료',
+          '초기 조건 통과: ' + initialCandidates.length + '개',
+          '제안 직전 재검증: ' +
+            scope.rechecked + '/' + initialCandidates.length,
+          '현재 종목: ' + item.symbol
+        ].join('\n');
+
+        const meta = latestMeta.get(item.symbol);
+
+        if(!meta){
+          recheckFailures.push({
+            symbol: item.symbol,
+            reason: '현재 거래 가능한 계약이 아님'
+          });
+          continue;
+        }
+
+        if(app.positions[item.symbol]){
+          recheckFailures.push({
+            symbol: item.symbol,
+            reason: '현재 저장된 보유 종목'
+          });
+          continue;
+        }
+
+        try{
+          const result = await inspectSymbol(meta, false);
+
+          if(result.candidate){
+            selectedCandidate = result.candidate;
+            break;
+          }
+
+          recheckFailures.push({
+            symbol: item.symbol,
+            reason: result.reason || '재검증 조건 미충족'
+          });
+
+        }catch(error){
+          if(error.scanFatal) throw error;
+          checkRun();
+
+          scope.dataFailures++;
+
+          recheckFailures.push({
+            symbol: item.symbol,
+            reason: '재검증 자료 수집 실패'
+          });
+        }
+      }
+    }
+
+    scanResult = {
+      status: selectedCandidate ? 'candidate' : 'no_candidate',
+
+      message: selectedCandidate
+        ? '전체 목록 순차 검증 후 초기 점수순 재검증을 통과한 후보입니다.'
+        : '자료를 검증한 범위에서 현재 모든 조건을 충족한 후보가 없습니다.',
+
+      scannedAt: serverNow(),
+      configuration: cfg,
+      scope: {...scope},
+      selectedCandidate,
+      rejectionSummary: rejectionSummary(),
+      recheckFailures,
+
+      probabilityEstimated: false,
+      automaticOrders: false,
+
+      limitations: [
+        '전체 종목을 같은 순간에 비교한 결과가 아닙니다.',
+        '자료 수집 실패·이력 부족 종목은 판단하지 못했습니다.',
+        '초기 점수순 재검증의 첫 유효 후보이며 전체 시장 최적 거래를 보장하지 않습니다.',
+        '거래대금 하한을 제거했으므로 저유동성 종목의 실제 체결 비용이 가정보다 클 수 있습니다.'
+      ]
+    };
+
+  }catch(error){
+    scanResult = {
+      status: error.scanCancelled ? 'cancelled' : 'unavailable',
+      message: error.message,
+      scannedAt: serverNow(),
+      configuration: cfg,
+      scope: {...scope},
+      selectedCandidate: null,
+      rejectionSummary: rejectionSummary(),
+      probabilityEstimated: false,
+      automaticOrders: false
+    };
+
+  }finally{
+    cancelButton.disabled = true;
+    cancelButton.onclick = null;
+  }
+
+  renderScan();
+  return scanResult;
+}
 /* ================= AI ================= */
 
 const AI_INSTRUCTIONS=`
