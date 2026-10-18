@@ -1689,73 +1689,177 @@ function technicalCandidate(meta,daily,h4){
   };
 }
 function buildPlan(c,cfg){
-  const s=market(c.symbol),q=s.quote,m=s.mark,now=serverNow();
+  const s=market(c.symbol);
+  const q=s.quote,m=s.mark,now=serverNow();
+  const unmetConditions=[...(c.unmetConditions||[])];
 
-  if(!q||!m||!recent(q.time,q.received)||!recent(m.time,m.received))return {reason:'최신 체결가·마크가격 확인 실패'};
-  if(c.dailyCloseTime!==Math.floor((now-2000)/DAY)*DAY-1||
-    c.h4CloseTime!==Math.floor((now-2000)/(4*HOUR))*(4*HOUR)-1)return {reason:'탐색 중 기준 봉 변경'};
+  if(!q||!m||!recent(q.time,q.received)||!recent(m.time,m.received)){
+    return {reason:'최신 체결가·마크가격 확인 실패'};
+  }
+
+  if(
+    c.dailyCloseTime!==Math.floor((now-2000)/DAY)*DAY-1||
+    c.h4CloseTime!==Math.floor((now-2000)/(4*HOUR))*(4*HOUR)-1
+  ){
+    return {reason:'탐색 중 기준 봉 변경'};
+  }
 
   const f5=flow(s,5),f15=flow(s,15);
-  if(!f5.usable||!f15.usable)return {reason:'5분·15분 수급 관측 기준 미충족'};
+  const flowUsable=f5.usable&&f15.usable;
 
-  const aligned=c.side===1
-    ?f5.takerBuyShare>=.53&&f15.takerBuyShare>=.53
-    :f5.takerBuyShare<=.47&&f15.takerBuyShare<=.47;
-  if(!aligned)return {reason:'추세와 체결 압력 불일치'};
+  if(!flowUsable){
+    unmetConditions.push('5분·15분 수급 관측 기준 미충족');
+  }else{
+    const aligned=c.side===1
+      ?f5.takerBuyShare>=.53&&f15.takerBuyShare>=.53
+      :f5.takerBuyShare<=.47&&f15.takerBuyShare<=.47;
+
+    if(!aligned){
+      unmetConditions.push('선택 방향과 체결 압력 불일치');
+    }
+  }
 
   const filters=c.meta.filters;
   const pf=filters.find(f=>f.filterType==='PRICE_FILTER');
   const lot=filters.find(f=>f.filterType==='LOT_SIZE');
   const ml=filters.find(f=>f.filterType==='MARKET_LOT_SIZE');
-  const nf=filters.find(f=>f.filterType==='MIN_NOTIONAL'||f.filterType==='NOTIONAL');
+  const nf=filters.find(f=>
+    f.filterType==='MIN_NOTIONAL'||f.filterType==='NOTIONAL'
+  );
 
-  const tick=Number(pf?.tickSize),step=Number(lot?.stepSize);
-  const minQty=Number(lot?.minQty),maxQty=Number(lot?.maxQty);
-  const minPrice=Number(pf?.minPrice),maxPrice=Number(pf?.maxPrice);
+  const tick=Number(pf?.tickSize);
+  const step=Number(lot?.stepSize);
+  const minQty=Number(lot?.minQty);
+  const maxQty=Number(lot?.maxQty);
+  const minPrice=Number(pf?.minPrice);
+  const maxPrice=Number(pf?.maxPrice);
   const minNotional=Number(nf?.notional??nf?.minNotional);
 
-  if(![tick,step,minQty,maxQty,minPrice,maxPrice,minNotional].every(finite)||
-    tick<=0||step<=0||minNotional<=0||minQty<0||maxQty<=0)return {reason:'거래소 주문 필터 확인 불가'};
+  if(
+    ![tick,step,minQty,maxQty,minPrice,maxPrice,minNotional].every(finite)||
+    tick<=0||step<=0||minNotional<=0||minQty<0||maxQty<=0
+  ){
+    return {reason:'거래소 주문 필터 확인 불가'};
+  }
 
-  const entry=stepRound(q.price,tick,c.side===1),a=c.h.ATR14;
-  if(Math.abs(entry-c.h.EMA20)>2*a)return {reason:'현재 가격 과도한 추격 구간'};
-  if(Math.abs(m.price-q.price)>.15*a)return {reason:'마크가격·체결가 괴리 과다'};
+  const entry=stepRound(q.price,tick,c.side===1);
+  const a=c.h.ATR14;
 
-  const stop=stepRound(c.rawStop,tick,c.side===-1);
-  const barriers=c.barriers.filter(v=>c.side*(v-entry)>0)
+  if(!finite(entry)||entry<=0||!finite(a)||a<=0){
+    return {reason:'진입 가격·ATR 계산 불가'};
+  }
+
+  if(Math.abs(entry-c.h.EMA20)>2*a){
+    unmetConditions.push('현재 가격이 EMA20 이격 기준 초과');
+  }
+
+  if(Math.abs(m.price-q.price)>.15*a){
+    unmetConditions.push('마크가격·체결가 괴리 기준 초과');
+  }
+
+  let stop=stepRound(c.rawStop,tick,c.side===-1);
+  let stopBasis='최근 완료 4시간봉 10개 고저점 + ATR 여유';
+
+  // 기존 구조적 손절가가 이미 현재 가격 반대편이면
+  // 계산 불가능한 손절 대신 ATR 기반 가정임을 명시한다.
+  if(!finite(stop)||stop<=0||c.side*(entry-stop)<=0){
+    stop=stepRound(entry-c.side*1.5*a,tick,c.side===-1);
+    stopBasis='구조적 손절 무효: 진입가에서 1.5 ATR 거리의 가정 손절';
+    unmetConditions.push('기존 구조적 손절 무효로 ATR 가정 손절 사용');
+  }
+
+  const barriers=c.barriers
+    .filter(v=>c.side*(v-entry)>0)
     .sort((x,y)=>Math.abs(x-entry)-Math.abs(y-entry));
 
-  if(!barriers.length)return {reason:'관측된 전방 목표 가격 수준 없음'};
+  let targetReference=barriers[0]??null;
+  let target=targetReference===null
+    ?NaN
+    :stepRound(targetReference-c.side*.15*a,tick,c.side===-1);
 
-  const target=stepRound(barriers[0]-c.side*.15*a,tick,c.side===-1);
-  const riskDistance=c.side*(entry-stop),rewardDistance=c.side*(target-entry);
+  let targetBasis='관측된 전방 지지·저항에서 ATR 여유 차감';
 
-  if(riskDistance<.8*a||riskDistance>3*a||rewardDistance<=0)return {reason:'기술적 손절 거리·목표 위치 부적합'};
+  // 관측 저항/지지가 없으면 목표수익에 맞춘 가격이 아니라
+  // 고정 ATR 거리의 시나리오 가격을 사용한다.
+  if(!finite(target)||target<=0||c.side*(target-entry)<=0){
+    target=stepRound(entry+c.side*2*a,tick,c.side===-1);
+    targetReference=null;
+    targetBasis='전방 구조적 목표 부재: 진입가에서 2 ATR 거리의 가정 목표';
+    unmetConditions.push('유효한 전방 지지·저항 부재로 ATR 가정 목표 사용');
+  }
 
-  // 실제 청산가가 아닌 보수적 손절 거리 필터.
-  if(riskDistance/entry>=.5/cfg.leverage)return {reason:'레버리지 대비 손절 거리 과다'};
+  const riskDistance=c.side*(entry-stop);
+  const rewardDistance=c.side*(target-entry);
+
+  if(
+    ![entry,stop,target,riskDistance,rewardDistance].every(finite)||
+    entry<=0||stop<=0||target<=0||
+    riskDistance<=0||rewardDistance<=0
+  ){
+    return {reason:'양수 가격·손절 방향·목표 방향 구성 불가'};
+  }
+
+  if(riskDistance<.8*a||riskDistance>3*a){
+    unmetConditions.push('손절 거리가 기존 ATR 기준 범위 밖');
+  }
+
+  if(riskDistance/entry>=.5/cfg.leverage){
+    unmetConditions.push(
+      '레버리지 대비 손절 거리 기준 초과: 손절 이전 청산 가능성 별도 확인 필요'
+    );
+  }
 
   if([entry,stop,target].some(v=>
-    !finite(v)||v<=0||(minPrice>0&&v<minPrice)||(maxPrice>0&&v>maxPrice)
-  ))return {reason:'가격 필터 미충족'};
+    (minPrice>0&&v<minPrice)||(maxPrice>0&&v>maxPrice)
+  )){
+    return {reason:'가격 필터 미충족'};
+  }
 
-  const fee=cfg.feePercent/100,slip=cfg.slipPercent/100;
+  const fee=cfg.feePercent/100;
+  const slip=cfg.slipPercent/100;
 
-  // 초기 증거금과 진입 비용 가정을 예산 안에 배정한다.
-  const quantity=stepRound(cfg.budget/(entry*(1/cfg.leverage+fee+slip)),step);
-  const minimumQuantity=stepRound(Math.max(minQty,minNotional/entry),step,true);
-  const minimumBudget=minimumQuantity*entry*(1/cfg.leverage+fee+slip);
+  const quantity=stepRound(
+    cfg.budget/(entry*(1/cfg.leverage+fee+slip)),step
+  );
 
-  if(!finite(quantity)||quantity<=0||quantity<minimumQuantity||
-    quantity>maxQty||quantity*entry<minNotional)return {reason:'입력 예산·수량 주문 조건 미충족'};
+  const minimumQuantity=stepRound(
+    Math.max(minQty,minNotional/entry),step,true
+  );
+
+  const minimumBudget=
+    minimumQuantity*entry*(1/cfg.leverage+fee+slip);
+
+  if(
+    !finite(quantity)||quantity<=0||
+    quantity<minimumQuantity||quantity>maxQty||
+    quantity*entry<minNotional
+  ){
+    return {reason:'입력 예산·수량 주문 조건 미충족'};
+  }
 
   const maxNotional=Number(nf?.maxNotional);
-  if(finite(maxNotional)&&maxNotional>0&&quantity*entry>maxNotional)return {reason:'최대 명목가치 초과'};
+
+  if(
+    finite(maxNotional)&&maxNotional>0&&
+    quantity*entry>maxNotional
+  ){
+    return {reason:'최대 명목가치 초과'};
+  }
 
   if(ml){
-    const lo=Number(ml.minQty),hi=Number(ml.maxQty),st=Number(ml.stepSize);
-    if(![lo,hi,st].every(finite))return {reason:'시장가 수량 필터 확인 불가'};
-    if((lo>0&&quantity<lo)||(hi>0&&quantity>hi)||!stepAligned(quantity,st)){
+    const lo=Number(ml.minQty);
+    const hi=Number(ml.maxQty);
+    const st=Number(ml.stepSize);
+
+    if(![lo,hi,st].every(finite)){
+      return {reason:'시장가 수량 필터 확인 불가'};
+    }
+
+    if(
+      (lo>0&&quantity<lo)||
+      (hi>0&&quantity>hi)||
+      !stepAligned(quantity,st)
+    ){
       return {reason:'시장가 수량 필터 미충족'};
     }
   }
@@ -1764,56 +1868,119 @@ function buildPlan(c,cfg){
     const gross=c.side*quantity*(exit-entry);
     const fees=quantity*(entry+exit)*fee;
     const slippageAllowance=quantity*(entry+exit)*slip;
-    const fundingAllowance=quantity*entry*cfg.fundingPercent/100;
+    const fundingAllowance=
+      quantity*entry*cfg.fundingPercent/100;
+
     return {
       gross,fees,slippageAllowance,fundingAllowance,
       net:gross-fees-slippageAllowance-fundingAllowance
     };
   }
 
-  const targetResult=outcome(target),stopResult=outcome(stop);
-  const loss=-stopResult.net,rr=targetResult.net/loss;
+  const targetResult=outcome(target);
+  const stopResult=outcome(stop);
+  const loss=-stopResult.net;
+  const rr=targetResult.net/loss;
 
-  if(![targetResult.net,loss,rr,minimumBudget].every(finite))return {reason:'손익 계산 불가'};
-  if(loss<=0||loss>cfg.allowedLoss)return {reason:'허용 손절 손실 초과'};
-  if(rr<cfg.minimumRR)return {reason:'비용 반영 손익비 2:1 미달'};
-  if(targetResult.net<cfg.desiredNet)return {reason:'기술적 목표가에서 +100% 순이익 미달'};
+  if(
+    ![targetResult.net,loss,rr,minimumBudget].every(finite)||
+    loss<=0
+  ){
+    return {reason:'손익 계산 불가'};
+  }
 
-  const favorable=c.side===1
-    ?(f5.takerBuyShare+f15.takerBuyShare)/2
-    :1-(f5.takerBuyShare+f15.takerBuyShare)/2;
+  // 허용 손실 비율 제한은 삭제한다.
+  if(rr<cfg.minimumRR){
+    unmetConditions.push('비용 반영 손익비 2:1 미달');
+  }
 
-  const score=Math.min(100,c.score+Math.min(20,(favorable-.5)*100)+Math.min(10,rr));
+  if(targetResult.net<cfg.desiredNet){
+    unmetConditions.push('기술적 목표가에서 +100% 순이익 미달');
+  }
+
+  if(targetResult.net<=0){
+    unmetConditions.push('목표가 도달 시에도 비용 차감 순손익이 0 이하');
+  }
+
+  const favorable=flowUsable
+    ?(
+      c.side===1
+        ?(f5.takerBuyShare+f15.takerBuyShare)/2
+        :1-(f5.takerBuyShare+f15.takerBuyShare)/2
+    )
+    :.5;
+
+  const score=Math.max(0,Math.min(
+    100,
+    c.score+
+    Math.min(20,Math.max(0,(favorable-.5)*100))+
+    Math.min(10,Math.max(0,rr))-
+    unmetConditions.length*6
+  ));
+
   const tolerance=Math.min(.15*a,entry*.002);
+  const allConditionsMet=unmetConditions.length===0;
 
   return {
     candidate:{
-      symbol:c.symbol,direction:c.side===1?'LONG':'SHORT',
-      score:Number(score.toFixed(1)),scoreMeaning:'휴리스틱 비교 점수 · 승률 아님',
-      entry,entryLow:stepRound(entry-tolerance,tick,true),entryHigh:stepRound(entry+tolerance,tick),
-      target,stop,quantity,configuredBudget:cfg.budget,leverage:cfg.leverage,
+      symbol:c.symbol,
+      direction:c.side===1?'LONG':'SHORT',
+      allConditionsMet,
+      selectionMode:allConditionsMet
+        ?'qualified'
+        :'forced_alternative',
+      unmetConditions,
+      score:Number(score.toFixed(1)),
+      scoreMeaning:'휴리스틱 비교 점수 · 승률 아님',
+
+      entry,
+      entryLow:stepRound(Math.max(tick,entry-tolerance),tick,true),
+      entryHigh:stepRound(entry+tolerance,tick),
+      target,stop,targetBasis,stopBasis,
+      quantity,
+      configuredBudget:cfg.budget,
+      leverage:cfg.leverage,
       initialMarginEstimate:quantity*entry/cfg.leverage,
       entryNotional:quantity*entry,
-      minimumNotional:minNotional,minimumBudgetEstimate:minimumBudget,
-      desiredNet:cfg.desiredNet,targetResult,stopResult,netRewardRisk:rr,
+      minimumNotional:minNotional,
+      minimumBudgetEstimate:minimumBudget,
+
+      desiredNet:cfg.desiredNet,
+      targetResult,stopResult,
+      netRewardRisk:rr,
       targetROIPercent:targetResult.net/cfg.budget*100,
       lossPercent:loss/cfg.budget*100,
-      targetReference:barriers[0],atr4h:a,
-      dailyCloseTime:c.dailyCloseTime,h4CloseTime:c.h4CloseTime,
-      flowEnd:f5.endTime,takerBuyShare5:f5.takerBuyShare,takerBuyShare15:f15.takerBuyShare,
-      delta5:f5.deltaQuote,delta15:f15.deltaQuote,
-      quoteTime:q.time,markTime:m.time,markPrice:m.price,
-      evaluatedAt:now,expiresAt:now+MINUTE,
+
+      targetReference,
+      atr4h:a,
+      dailyCloseTime:c.dailyCloseTime,
+      h4CloseTime:c.h4CloseTime,
+
+      flowUsable,
+      flowEnd:f5.endTime,
+      takerBuyShare5:f5.usable?f5.takerBuyShare:null,
+      takerBuyShare15:f15.usable?f15.takerBuyShare:null,
+      delta5:f5.deltaQuote,
+      delta15:f15.deltaQuote,
+
+      quoteTime:q.time,
+      markTime:m.time,
+      markPrice:m.price,
+      evaluatedAt:now,
+      expiresAt:now+MINUTE,
+
       assumptions:{
         feePerLegPercent:cfg.feePercent,
         slippagePerLegPercent:cfg.slipPercent,
         totalFundingCostPercent:cfg.fundingPercent,
-        actualAccountVerified:false,actualLiquidationVerified:false,
-        fullExitAtTargetOrStop:true,executionGuaranteed:false
+        actualAccountVerified:false,
+        actualLiquidationVerified:false,
+        fullExitAtTargetOrStop:true,
+        executionGuaranteed:false
       }
     }
   };
-}
+                }
 function candidateText(c){
   return [
     c.symbol+' · '+c.direction+' · 규칙 점수 '+fmt(c.score,1)+'/100 · 승률 아님',
