@@ -1246,21 +1246,60 @@ async function waitForRefresh(){
 /* ================= 신규 후보 ================= */
 
 function scanConfig(){
-  const budget=numberInput('scanBudget'),leverage=numberInput('scanLeverage');
-  const lossPercent=numberInput('scanLoss'),universe=numberInput('scanUniverse');
-  const feePercent=numberInput('scanFee'),slipPercent=numberInput('scanSlip'),fundingPercent=numberInput('scanFunding');
-  if(!finite(budget)||budget<=0)throw new Error('신규 후보 검토 예산을 입력하세요. 원하지 않으면 종합 분석의 신규 후보 포함을 해제하세요.');
-  if(!Number.isInteger(leverage)||leverage<1||leverage>20)throw new Error('검토 레버리지는 정수 1~20입니다.');
-  if(!finite(lossPercent)||lossPercent<.1||lossPercent>50)throw new Error('허용 손실은 0.1~50%입니다.');
-  if(![10,20,30].includes(universe))throw new Error('탐색 범위를 확인하세요.');
-  if(!finite(feePercent)||feePercent<0||feePercent>1||
-    !finite(slipPercent)||slipPercent<0||slipPercent>5||
-    !finite(fundingPercent)||fundingPercent<0||fundingPercent>10)throw new Error('비용 가정값을 확인하세요.');
-  if(!finite(budget*leverage)||!finite(budget*2))throw new Error('예산 계산 범위를 초과했습니다.');
+  const budget = numberInput('scanBudget');
+  const leverage = numberInput('scanLeverage');
+  const lossPercent = numberInput('scanLoss');
+
+  const feePercent = numberInput('scanFee');
+  const slipPercent = numberInput('scanSlip');
+  const fundingPercent = numberInput('scanFunding');
+
+  if(!finite(budget) || budget <= 0){
+    throw new Error(
+      '신규 후보 검토 예산을 입력하세요. ' +
+      '예산은 레버리지 적용 전 본인 자금입니다.'
+    );
+  }
+
+  if(!Number.isInteger(leverage) ||
+     leverage < 1 || leverage > 20){
+    throw new Error('검토 레버리지는 정수 1~20입니다.');
+  }
+
+  if(!finite(lossPercent) ||
+     lossPercent < 0.1 || lossPercent > 50){
+    throw new Error('허용 손실은 0.1~50%입니다.');
+  }
+
+  if(
+    !finite(feePercent) || feePercent < 0 || feePercent > 1 ||
+    !finite(slipPercent) || slipPercent < 0 || slipPercent > 5 ||
+    !finite(fundingPercent) || fundingPercent < 0 || fundingPercent > 10
+  ){
+    throw new Error('비용 가정값을 확인하세요.');
+  }
+
+  if(!finite(budget * leverage) || !finite(budget * 2)){
+    throw new Error('예산 계산 범위를 초과했습니다.');
+  }
+
   return {
-    budget,leverage,lossPercent,universe,feePercent,slipPercent,fundingPercent,
-    desiredNet:budget*2,allowedLoss:budget*lossPercent/100,
-    minimumRR:2,goalMeaning:'입력 예산 대비 순이익 +200% 이상'
+    budget,
+    leverage,
+    lossPercent,
+    universe: 'all',
+    feePercent,
+    slipPercent,
+    fundingPercent,
+
+    // 예산 100 USDT → 목표 순이익 100 USDT.
+    desiredNet: budget,
+
+    allowedLoss: budget * lossPercent / 100,
+    minimumRR: 2,
+
+    goalMeaning:
+      '입력 예산 대비 순이익 +100% 이상 · 원금 포함 2배 목표'
   };
 }
 function stepRound(value,step,up=false){
