@@ -366,12 +366,16 @@ footer{text-align:center;font-size:11px;color:var(--muted);margin-top:22px}
       <button id="scanButton" class="solid" style="width:100%;margin-top:15px">신규 후보만 탐색 · AI 비용 없음</button>
       <p id="scanError" class="error" role="status"></p>
 
-      <div class="notice">목표 순이익 ≥ 입력 예산의 2배
+      <div class="notice">목표 순이익 ≥ 입력 예산의 100%
+원금 포함 목표 금액 ≥ 입력 예산의 2배
 비용 반영 손익비 ≥ 2:1
 손절 손실 ≤ 입력한 허용 손실
 
-예산 10 USDT라면 목표 순이익은 20 USDT 이상입니다.
-이는 수익률 +200%이며 손익비 2:1과 다른 조건입니다.
+예산 100 USDT라면 목표 순이익은 100 USDT 이상입니다.
+원금 100 + 순이익 100 = 합계 200 USDT를 목표로 합니다.
+
+예산은 레버리지 적용 전 본인 자금입니다.
+목표 순이익 계산에는 설정한 수수료·슬리피지·펀딩 비용 가정을 반영합니다.
 
 거래소 최소 주문금액은 별도로 확인합니다.
 레버리지를 자동으로 높이지 않습니다.</div>
