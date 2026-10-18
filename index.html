@@ -2157,7 +2157,8 @@ async function runFullScan(cfg){
         '진행 '+(scope.scanned+1)+'/'+universe.length+' · '+meta.symbol,
         '경과 '+Math.floor(elapsed/60)+'분 '+elapsed%60+'초',
         remaining!==null?'남은 시간 단순 추정 약 '+remaining+'분 · 네트워크에 따라 달라짐':'남은 시간 계산 중',
-        '기술 통과 '+scope.technicalPassed+'개 / 모든 조건 통과 '+initial.length+'개',
+                '기술 계산 가능 '+scope.technicalPassed+
+        '개 / 포지션 계산 가능 '+initial.length+'개',
         '아직 OpenAI 보고서 요청 전입니다.'
       ].join('\n'),scope.scanned,universe.length);
 
@@ -2176,7 +2177,13 @@ async function runFullScan(cfg){
     }
 
     scope.allSymbolsVisited=true;
-    scope.eligible=initial.length;
+        scope.eligible=initial.filter(
+      x=>x.plan.allConditionsMet
+    ).length;
+
+    scope.alternativeCount=initial.filter(
+      x=>!x.plan.allConditionsMet
+    ).length;
 
     if(scope.chartSuccess===0)throw new Error('전체 목록의 차트 자료를 수집하지 못했습니다. 네트워크·지역 제한을 확인하세요.');
 
