@@ -1553,25 +1553,42 @@ async function waitForRefresh(){
 /* ================= 전체 선물 후보 계산 ================= */
 
 function scanConfig(){
-  const budget=numberInput('scanBudget'),leverage=numberInput('scanLeverage');
-  const lossPercent=numberInput('scanLoss');
-  const feePercent=numberInput('scanFee'),slipPercent=numberInput('scanSlip');
+  const budget=numberInput('scanBudget');
+  const leverage=numberInput('scanLeverage');
+  const feePercent=numberInput('scanFee');
+  const slipPercent=numberInput('scanSlip');
   const fundingPercent=numberInput('scanFunding');
 
-  if(!finite(budget)||budget<=0)throw new Error('신규 투입 검토 예산을 입력하세요. 예: 100');
-  if(!Number.isInteger(leverage)||leverage<1||leverage>20)throw new Error('검토 레버리지는 정수 1~20입니다.');
-  if(!finite(lossPercent)||lossPercent<.1||lossPercent>50)throw new Error('허용 손실은 0.1~50%입니다.');
-  if(!finite(feePercent)||feePercent<0||feePercent>1||
+  if(!finite(budget)||budget<=0){
+    throw new Error('신규 투입 검토 예산을 입력하세요. 예: 100');
+  }
+
+  if(!Number.isInteger(leverage)||leverage<1||leverage>20){
+    throw new Error('검토 레버리지는 정수 1~20입니다.');
+  }
+
+  if(
+    !finite(feePercent)||feePercent<0||feePercent>1||
     !finite(slipPercent)||slipPercent<0||slipPercent>5||
-    !finite(fundingPercent)||fundingPercent<0||fundingPercent>10)throw new Error('비용 가정값을 확인하세요.');
-  if(!finite(budget*leverage)||!finite(budget*2))throw new Error('예산 계산 범위를 초과했습니다.');
+    !finite(fundingPercent)||fundingPercent<0||fundingPercent>10
+  ){
+    throw new Error('비용 가정값을 확인하세요.');
+  }
+
+  if(!finite(budget*leverage)||!finite(budget*2)){
+    throw new Error('예산 계산 범위를 초과했습니다.');
+  }
 
   return {
-    budget,leverage,lossPercent,feePercent,slipPercent,fundingPercent,
-    universe:'all',desiredNet:budget,allowedLoss:budget*lossPercent/100,
-    minimumRR:2,goalMeaning:'순이익 +100% 이상 · 원금 포함 2배 목표'
+    budget,leverage,feePercent,slipPercent,fundingPercent,
+    universe:'all',
+    desiredNet:budget,
+    minimumRR:2,
+    alwaysSelectOne:true,
+    goalMeaning:
+      '순이익 +100%는 우선 목표이며, 미달 시에도 계산 가능한 대안 1개 선정'
   };
-}
+      }
 function stepRound(value,step,up=false){
   if(!finite(value)||!finite(step)||step<=0)return NaN;
   const units=value/step;
