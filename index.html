@@ -1146,7 +1146,7 @@ function buildCoins(){
         assertMutable();
         if(app.positions[symbol])throw new Error('보유 포지션이 있는 종목은 먼저 보유 등록을 정리하세요.');
         if(app.coins.length===1)throw new Error('관심 종목을 최소 1개 유지하세요.');
-        if(symbol===selected&&dirty&&!confirm('저장하지 않은 입력을 버릴까요?'))return;
+        if(dirty&&!confirm('저장하지 않은 포지션 입력이 있습니다.\n입력을 버리고 관심 종목을 삭제할까요?'))return;
         const next=clone(app);next.coins=next.coins.filter(s=>s!==symbol);
         if(next.selected===symbol)next.selected=next.coins[0];
         persist(next);selected=app.selected;
