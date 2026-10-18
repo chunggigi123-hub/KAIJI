@@ -1983,6 +1983,19 @@ function buildPlan(c,cfg){
                 }
 function candidateText(c){
   return [
+        '선정 유형: '+(
+      c.allConditionsMet
+        ?'우선 조건 충족'
+        :'즉시 매매 가정 · 조건 미충족 대안'
+    ),
+    '미충족 조건: '+(
+      c.unmetConditions?.length
+        ?c.unmetConditions.join(' / ')
+        :'없음'
+    ),
+    '목표가 근거: '+(c.targetBasis||'기존 기술 기준'),
+    '손절가 근거: '+(c.stopBasis||'기존 기술 기준'),
+    '',
     c.symbol+' · '+c.direction+' · 규칙 점수 '+fmt(c.score,1)+'/100 · 승률 아님',
     '기준 시각: '+date(c.evaluatedAt),
     '재검토 기한: '+date(c.expiresAt),
@@ -2007,7 +2020,14 @@ function candidateText(c){
     '최소 주문 명목가치: '+fmt(c.minimumNotional)+' USDT',
     '현재 가격·레버리지 기준 최소 예산 추정: '+fmt(c.minimumBudgetEstimate,4)+' USDT',
     '',
-    '5분 / 15분 매수 비중: '+fmt(c.takerBuyShare5*100,1)+'% / '+fmt(c.takerBuyShare15*100,1)+'%',
+        '5분 / 15분 매수 비중: '+
+      (finite(c.takerBuyShare5)
+        ?fmt(c.takerBuyShare5*100,1)+'%'
+        :'자료 미충족')+
+      ' / '+
+      (finite(c.takerBuyShare15)
+        ?fmt(c.takerBuyShare15*100,1)+'%'
+        :'자료 미충족'),
     '수급 종료: '+date(c.flowEnd),
     '',
     '손익은 참고 진입가에서 전량 체결되는 비용 가정 계산입니다.',
@@ -2023,9 +2043,10 @@ function scopeText(s){
     '심볼·필터 형식 미지원: '+s.unsupportedExcluded+'개',
     '목록 순회: '+s.scanned+'/'+s.totalToScan+'개',
     '차트 수집 성공: '+s.chartSuccess+'개',
-    '기술 조건 통과: '+s.technicalPassed+'개',
+    '기술 계산 가능: '+s.technicalPassed+'개',
     '수급·손익 추가 검증 시도: '+s.finalChecked+'개',
-    '초기 모든 조건 통과: '+s.eligible+'개',
+    '초기 우선 조건 충족: '+s.eligible+'개',
+    '초기 조건 미충족 대안: '+(s.alternativeCount??0)+'개',
     '최종 재검증 시도: '+s.rechecked+'개',
     '자료 수집·검증 실패 횟수: '+s.dataFailures,
     '전체 목록 순회: '+(s.allSymbolsVisited?'완료':'미완료')
@@ -2037,8 +2058,13 @@ function renderScan(){
   const expired=c&&(!clockGood()||serverNow()>c.expiresAt);
   $('scanSummary').className='notice'+(expired?' risk':'');
   $('scanSummary').textContent=
-    (c?(expired?'후보 재검토 필요 · 과거 계산값입니다.':'조건 충족 후보 · 분석 당시 참고값'):
-      '신규 진입 보류 · '+r.message)+
+    (c?(
+      expired
+        ?'후보 재검토 필요 · 과거 계산값입니다.'
+        :c.allConditionsMet
+          ?'우선 조건 충족 후보 1개 · 분석 당시 참고값'
+          :'즉시 매매 가정 대안 1개 · 조건 미충족 포함'
+    ):'후보 계산 불가 · '+r.message)+
     '\n\n'+scopeText(r.scope);
 
   $('scanResult').textContent=c?candidateText(c):
