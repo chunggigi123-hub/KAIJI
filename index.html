@@ -1466,24 +1466,84 @@ function candidateText(c){
   ].join('\n');
 }
 function renderScan(){
-  if(!scanResult)return;
-  const r=scanResult,c=r.selectedCandidate;
-  const scope=r.scope?[
-    '거래대금 상위 '+r.scope.scanned+'개 기술 비교',
-    '기술 통과 '+r.scope.technicalPassed+'개',
-    '최신 수급 검증 '+r.scope.finalChecked+'개',
-    '최종 조건 충족 '+r.scope.eligible+'개'
-  ].join(' / '):'';
-  const expired=c&&(!clockGood()||serverNow()>c.expiresAt);
-  $('scanStatus').className='notice'+(expired?' risk':'');
-  $('scanStatus').textContent=(
-    c?(expired?'후보 재검토 필요 · 현재 진입 제안으로 사용하지 마세요.':'조건 충족 후보 · 분석 당시 참고값'):
-    r.status==='disabled'?'이번 종합 분석에서 신규 후보 탐색을 사용하지 않았습니다.':
-    '신규 진입 보류 · '+r.message
-  )+(scope?'\n'+scope:'');
-  if(c)$('scanResult').textContent=candidateText(c);
-  else $('scanResult').textContent=(r.rejectionSummary||[]).map(x=>'• '+x.reason+': '+x.count+'개').join('\n')+
-    (r.rejectionSummary?.length?'\n\n목표를 맞추기 위해 레버리지·목표가·손절 폭을 자동 변경하지 않습니다.':'');
+  if(!scanResult) return;
+
+  const r = scanResult;
+  const c = r.selectedCandidate;
+  const s = r.scope;
+
+  const scopeText = s ? [
+    '거래 중인 USDT 무기한: ' + s.listed + '개',
+    '보유 제외: ' + s.heldExcluded + '개',
+    '심볼·필터 형식 미지원: ' + s.unsupportedExcluded + '개',
+    '목록 순회: ' + s.scanned + '/' + s.totalToScan + '개',
+    '차트 수집 성공: ' + s.chartSuccess + '개',
+    '기술 조건 통과: ' + s.technicalPassed + '개',
+    '수급·손익 추가 검증 시도: ' + s.finalChecked + '개',
+    '초기 모든 조건 통과: ' + s.eligible + '개',
+    '제안 직전 재검증 시도: ' + s.rechecked + '개',
+    '자료 수집·검증 실패 횟수: ' + s.dataFailures,
+    '전체 목록 순회: ' + (s.allSymbolsVisited ? '완료' : '미완료')
+  ].join('\n') : '';
+
+  const expired = c && (
+    !clockGood() ||
+    serverNow() > c.expiresAt
+  );
+
+  $('scanStatus').className =
+    'notice' + (
+      expired ||
+      r.status === 'unavailable' ||
+      r.status === 'cancelled'
+        ? ' risk'
+        : ''
+    );
+
+  let heading;
+
+  if(c){
+    heading = expired
+      ? '후보 재검토 필요 · 현재 진입 제안으로 사용하지 마세요.'
+      : '조건 충족 후보 · 제안 직전 재검증 통과';
+  }else if(r.status === 'disabled'){
+    heading = '이번 종합 분석에서 신규 후보 탐색을 사용하지 않았습니다.';
+  }else if(r.status === 'cancelled'){
+    heading = '후보 탐색 중지 · 부분 결과로 제안하지 않습니다.';
+  }else{
+    heading = '신규 진입 보류 · ' + (r.message || '조건 충족 후보 없음');
+  }
+
+  $('scanStatus').textContent =
+    heading + (scopeText ? '\n\n' + scopeText : '');
+
+  if(c){
+    $('scanResult').textContent =
+      candidateText(c) +
+      '\n\n[탐색 범위와 한계]\n' +
+      '전체 목록을 순차 비교했으며 동일 시각의 전체 시장 순위는 아닙니다.\n' +
+      '초기 점수순 재검증에서 처음 조건을 통과한 후보입니다.\n' +
+      '자료 수집 실패·이력 부족 종목은 판단하지 못했습니다.';
+  }else{
+    const lines = (r.rejectionSummary || [])
+      .map(x => '• ' + x.reason + ': ' + x.count + '개');
+
+    if(r.recheckFailures?.length){
+      lines.push(
+        '',
+        '제안 직전 재검증 탈락: ' + r.recheckFailures.length + '개'
+      );
+    }
+
+    if(lines.length){
+      lines.push(
+        '',
+        '목표를 맞추기 위해 레버리지·목표가·손절 폭을 자동 변경하지 않습니다.'
+      );
+    }
+
+    $('scanResult').textContent = lines.join('\n');
+  }
 }
 function scanForAI(r){
   if(!r)return {status:'disabled',selectedCandidate:null};
