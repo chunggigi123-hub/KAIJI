@@ -2263,7 +2263,39 @@ async function runFullScan(cfg){
         try{
           await pace();
           const r=await inspectCandidate(meta,cfg,false,scope);
-          if(r.candidate){selectedCandidate=r.candidate;break}
+                    if(r.candidate){
+            // 모든 우선 조건을 충족하면 바로 최종 선택한다.
+            if(r.candidate.allConditionsMet){
+              selectedCandidate=r.candidate;
+              break;
+            }
+
+            // 조건 미충족 후보도 대안으로 보관한다.
+            // 기존 대안이 오래됐거나 새 후보 점수가 더 높으면 교체한다.
+            if(
+              !alternativeCandidate||
+              serverNow()>alternativeCandidate.expiresAt||
+              r.candidate.score>alternativeCandidate.score
+            ){
+              alternativeCandidate=r.candidate;
+            }
+
+            // 아직 확인하지 않은 초기 조건 충족 후보가 있는지 확인한다.
+            const remainingQualified=initial
+              .slice(scope.rechecked)
+              .some(x=>x.plan.allConditionsMet);
+
+            // 우선 후보 확인이 끝났으면 최신 대안 1개를 선택한다.
+            if(
+              !remainingQualified&&
+              serverNow()<=alternativeCandidate.expiresAt
+            ){
+              selectedCandidate=alternativeCandidate;
+              break;
+            }
+
+            continue;
+                    }
           recheckFailures.push({symbol:item.symbol,reason:r.reason||'재검증 미충족'});
         }catch(e){
           if(e.cancelled||e.fatalScan)throw e;
