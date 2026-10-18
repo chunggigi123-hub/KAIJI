@@ -1603,20 +1603,66 @@ function stepAligned(value,step){
 }
 function technicalCandidate(meta,daily,h4){
   const asOf=serverNow();
-  const dq=quality(daily,DAY,200,asOf),hq=quality(h4,4*HOUR,120,asOf);
-  if(!dq.good||!hq.good)return {reason:'완료 봉 이력·최신성·연속성 부족'};
+  const dq=quality(daily,DAY,200,asOf);
+  const hq=quality(h4,4*HOUR,120,asOf);
 
-  const d=indicators(dq.rows),h=indicators(hq.rows);
+  // 자료 검증은 유지한다. 없는 데이터를 만들어 후보로 쓰지 않는다.
+  if(!dq.good||!hq.good){
+    return {reason:'완료 봉 이력·최신성·연속성 부족'};
+  }
+
+  const d=indicators(dq.rows);
+  const h=indicators(hq.rows);
+
+  if(
+    !d||!h||
+    ![
+      d.close,d.EMA20,d.SMA50,
+      h.close,h.EMA20,h.SMA50,
+      h.ATR14,h.RSI14,h.volumeRatio
+    ].every(finite)||
+    h.ATR14<=0
+  ){
+    return {reason:'방향·변동성·거래량 지표 계산 불가'};
+  }
+
+  const unmetConditions=[];
   let side=0;
-  if(trend(d)==='상승 우세'&&trend(h)==='상승 우세')side=1;
-  if(trend(d)==='하락 우세'&&trend(h)==='하락 우세')side=-1;
 
-  if(!side)return {reason:'일봉·4시간봉 추세 불일치'};
-  if(![h.ATR14,h.RSI14,h.volumeRatio].every(finite)||h.ATR14<=0)return {reason:'변동성·거래량 지표 부족'};
-  if(side===1&&(h.RSI14<48||h.RSI14>68))return {reason:'롱 RSI 조건 미충족'};
-  if(side===-1&&(h.RSI14<32||h.RSI14>52))return {reason:'숏 RSI 조건 미충족'};
-  if(h.volumeRatio<.8)return {reason:'완료 4시간봉 거래량 부족'};
-  if(Math.abs(h.close-h.EMA20)>2*h.ATR14)return {reason:'EMA20 대비 과도한 이격'};
+  if(trend(d)==='상승 우세'&&trend(h)==='상승 우세'){
+    side=1;
+  }else if(trend(d)==='하락 우세'&&trend(h)==='하락 우세'){
+    side=-1;
+  }else{
+    unmetConditions.push('일봉·4시간봉 추세 일치 조건 미충족');
+
+    // 추세가 일치하지 않을 때도 방향 하나를 선택한다.
+    // 4시간봉을 더 크게 반영하는 비교 규칙이며 승률 모델은 아니다.
+    const vote=
+      (h.close>=h.EMA20?2:-2)+
+      (h.EMA20>=h.SMA50?1:-1)+
+      (d.close>=d.EMA20?1:-1);
+
+    side=vote>0?1:
+      vote<0?-1:
+      h.close>=h.EMA20?1:-1;
+  }
+
+  if(side===1&&(h.RSI14<48||h.RSI14>68)){
+    unmetConditions.push('롱 RSI 기준 미충족');
+  }
+
+  if(side===-1&&(h.RSI14<32||h.RSI14>52)){
+    unmetConditions.push('숏 RSI 기준 미충족');
+  }
+
+  if(h.volumeRatio<.8){
+    unmetConditions.push('완료 4시간봉 거래량 기준 미충족');
+  }
+
+  if(Math.abs(h.close-h.EMA20)>2*h.ATR14){
+    unmetConditions.push('완료 4시간봉 EMA20 이격 기준 초과');
+  }
 
   const recentRows=hq.rows.slice(-10);
   const rawStop=side===1
@@ -1625,10 +1671,20 @@ function technicalCandidate(meta,daily,h4){
 
   return {
     candidate:{
-      symbol:meta.symbol,meta,side,d,h,rawStop,
-      barriers:(side===1?[h.previous20High,d.previous20High]:[h.previous20Low,d.previous20Low]).filter(finite),
-      score:40+Math.min(15,Math.max(0,h.volumeRatio-.8)*10)+Math.max(0,10-Math.abs(h.RSI14-(side===1?57:43))),
-      dailyCloseTime:dq.latestClose,h4CloseTime:hq.latestClose
+      symbol:meta.symbol,
+      meta,side,d,h,rawStop,
+      unmetConditions,
+      barriers:(
+        side===1
+          ?[h.previous20High,d.previous20High]
+          :[h.previous20Low,d.previous20Low]
+      ).filter(finite),
+      score:
+        40+
+        Math.min(15,Math.max(0,h.volumeRatio-.8)*10)+
+        Math.max(0,10-Math.abs(h.RSI14-(side===1?57:43))),
+      dailyCloseTime:dq.latestClose,
+      h4CloseTime:hq.latestClose
     }
   };
 }
