@@ -2232,6 +2232,7 @@ async function runFullScan(cfg){
     );
 
     let selectedCandidate=null;
+    let alternativeCandidate=null;
     if(initial.length){
       checkJob();
       await syncClock(true);
