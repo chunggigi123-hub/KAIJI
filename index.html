@@ -1414,7 +1414,9 @@ function buildPlan(c,cfg){
   if(![quantity,targetResult.net,loss,rr,minimumBudget].every(finite))return {reason:'손익 계산 불가'};
   if(loss<=0||loss>cfg.allowedLoss)return {reason:'허용 손절 손실 초과'};
   if(rr<2)return {reason:'비용 반영 손익비 2:1 미달'};
-  if(targetResult.net<cfg.desiredNet)return {reason:'기술적 목표가에서 예산 2배 순이익 미달'};
+  if(targetResult.net<cfg.desiredNet)return {
+  reason:'기술적 목표가에서 예산 대비 +100% 순이익 미달'
+};
 
   const favorable=c.side===1?(f5.takerBuyShare+f15.takerBuyShare)/2:1-(f5.takerBuyShare+f15.takerBuyShare)/2;
   const score=Math.min(100,c.score+Math.min(20,(favorable-.5)*100)+Math.min(10,rr));
