@@ -2180,7 +2180,11 @@ async function runFullScan(cfg){
 
     if(scope.chartSuccess===0)throw new Error('전체 목록의 차트 자료를 수집하지 못했습니다. 네트워크·지역 제한을 확인하세요.');
 
-    initial.sort((a,b)=>b.plan.score-a.plan.score);
+        initial.sort((a,b)=>
+      Number(b.plan.allConditionsMet)-Number(a.plan.allConditionsMet)||
+      b.plan.score-a.plan.score||
+      b.plan.netRewardRisk-a.plan.netRewardRisk
+    );
 
     let selectedCandidate=null;
     if(initial.length){
