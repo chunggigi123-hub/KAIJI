@@ -2560,6 +2560,14 @@ async function analyze(){
 
     const heldSymbols=Object.keys(app().positions);
 
+const directionSymbols=[...new Set([
+  'BTCUSDT',
+  ...heldSymbols
+])];
+
+const directionHistory=await loadDirectionHistory(directionSymbols);
+check();
+
     const symbols=[...new Set([
       'BTCUSDT',
       selected,
