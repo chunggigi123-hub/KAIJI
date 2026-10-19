@@ -2394,7 +2394,7 @@ async function analyze(){
     };
     currentContext=ctx;
     progress('카이지가 트레이더 관점에서 판단 중 · OpenAI API 비용 발생 가능');
-    const result=await requestAI(key,payload,REPORT,8500);
+    const result=await requestAI(key,payload,REPORT,11000);
     check();
     let report=result.text;
     if(result.incomplete)report+='\n\n[출력 알림] 응답 일부가 생략되었을 수 있습니다.';
