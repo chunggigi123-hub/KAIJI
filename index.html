@@ -1616,7 +1616,11 @@ async function fullScan(cfg){
       listed:0,heldExcluded:0,unsupported:0,total:0,visited:0,
       validCharts:0,invalidCharts:0,liveRechecked:0,liveFailed:0,allVisited:false
     },
-    candidates:{LONG:null,SHORT:null},reasons:{LONG:'탐색 중',SHORT:'탐색 중'},
+        candidates:{LONG:null,SHORT:null},
+    reasons:{LONG:'탐색 중',SHORT:'탐색 중'},
+
+    marketBreadth:createAltDirectionSummary(),
+
     rejectionSummary:[]
   };
   latestScan=scan;renderCandidates();
