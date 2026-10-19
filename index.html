@@ -2672,7 +2672,13 @@ heldSymbols,
     check();
     let report=result.text;
     if(result.incomplete)report+='\n\n[출력 알림] 응답 일부가 생략되었을 수 있습니다.';
-    report+='\n\n[코드 계산 원본 · AI 설명과 다르면 이 값을 확인]\n';
+    report+='\n\n[BTC·보유 코인 가격 조건과 관찰률 · 코드 계산 원본]\n';
+
+for(const scenario of directionScenarios){
+  report+='\n'+directionScenarioText(scenario)+'\n';
+}
+
+report+='\n\n[코드 계산 원본 · AI 설명과 다르면 이 값을 확인]\n';
     for(const direction of ['LONG','SHORT']){
       const c=scan.candidates[direction];
       report+='\n'+direction+'\n'+(c?candidateText(c):scan.reasons[direction])+'\n';
