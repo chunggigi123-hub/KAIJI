@@ -2626,9 +2626,21 @@ const id=uid();
           '시장 종합 판단'
         ],
 
-        bitcoinSymbol:'BTCUSDT',
+bitcoinSymbol:'BTCUSDT',
 
-        heldSymbols,
+priceScenarios:directionScenarios,
+
+priceScenarioDefinition:{
+  confirmation:'순간 체결가가 아닌 완료 4시간봉 종가',
+  horizonHours:24,
+  thresholdRule:'최근 완료 20개 4시간봉 고저점에 0.1 ATR 완충 적용',
+  continuationRule:'확인 후 24시간 종가가 확인 종가보다 해당 방향으로 0.5 ATR 이상 이동',
+  percentageMeaning:'과거 조건부 방향 지속 관찰률',
+  futureProbabilityValidated:false,
+  upAndDownAreNotComplements:true
+},
+
+heldSymbols,
 
         majorSymbols:REPORT_MAJOR_SYMBOLS,
 
