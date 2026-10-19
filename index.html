@@ -1650,6 +1650,11 @@ async function fullScan(cfg){
         check();
         const t=technical(meta,data[0],data[1]);
         scan.scope.validCharts++;
+
+        // 유효한 완료 차트를 확보한 종목의 추세를 집계합니다.
+        // 기존 LONG/SHORT 점수와 선정 방식은 변경하지 않습니다.
+        addAltDirectionSample(scan.marketBreadth,t);
+
         for(const side of [1,-1]){
           try{
             const plan=makePlan(t,side,cfg,t.h.close,false);
