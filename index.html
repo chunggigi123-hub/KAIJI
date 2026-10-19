@@ -2449,7 +2449,6 @@ function openHistory(id){
 }
 function renderAll(){
   renderSymbols();loadForm();renderClosed();renderHistory();renderChat();renderProposals();
-  $('memoryNotes').value=mem().notes;
   for(const id of SF)if(mem().settings[id]!=null)$(id).value=mem().settings[id];
   storageUI();renderMarket();
 }
