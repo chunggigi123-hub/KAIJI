@@ -2223,7 +2223,46 @@ async function analyze(){
       type:'comprehensive_report',asOf,asOfUTC:new Date(asOf).toISOString(),
       selectedSymbol:selected,assets:latest.assets,dataErrors:latest.errors,
       userPosition:positionContext(),
+
       registeredPositions:Object.values(app().positions),
+
+      // 선택 종목뿐 아니라 저장된 모든 보유 포지션을 평가합니다.
+      heldPositionEvaluations:Object.values(app().positions).map(p=>{
+        const m=market(p.symbol).mark;
+
+        return evaluation(
+          p,
+          fresh(m)?m.price:null
+        );
+      }),
+
+      marketDirection:{
+        requiredOrder:[
+          '비트코인 시장 방향',
+          '저장된 보유 코인 방향',
+          '메이저 코인 방향',
+          '알트코인 전반 방향',
+          '시장 종합 판단'
+        ],
+
+        bitcoinSymbol:'BTCUSDT',
+
+        heldSymbols,
+
+        majorSymbols:REPORT_MAJOR_SYMBOLS,
+
+        majorDefinition:
+          '앱에서 지정한 비교군 ETH·BNB·SOL·XRP. '+
+          '공식 시가총액 순위가 아님',
+
+        altBreadth:clone(scan.marketBreadth),
+
+        scopeNote:
+          'BTC·보유·메이저의 개별 자료는 assets를 사용한다. '+
+          '알트 전반은 altBreadth의 순차 탐색 집계를 사용한다. '+
+          '두 자료의 기준 시각과 범위가 다르다.'
+      },
+
       newPositionScan:clone(scan),
       candidateCurrentChecks:currentCandidateChecks(scan),
       memory:memoryContext(symbols),
