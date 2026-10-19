@@ -2300,7 +2300,7 @@ async function analyze(){
       for(const c of Object.values(scan.candidates).filter(Boolean))
         n.memory.proposals.push({...clone(c),observation:{status:'pending',final:false}});
     });
-    renderProposals();renderLinks();renderMemory();renderCandidates();
+    renderProposals();renderLinks();renderCandidates();
 
     const asOf=now();
     const payload={
@@ -2387,7 +2387,6 @@ async function analyze(){
     }catch(e){
       text('historyStatus','보고서 생성 후 저장 실패. 보고서를 별도로 복사하세요.\n'+e.message);
     }
-    renderMemory();
     progress('카이지 판단 완료 · 정적 자료입니다.',1,1);
   }catch(e){
     const message=e.message+'\n'+(owner.aiSent?
@@ -2415,7 +2414,6 @@ function renderHistory(){
     $('historySelect').append(option);
   }
   if(state.history.some(r=>r.id===old))$('historySelect').value=old;
-  renderMemory();
 }
 function resetReport(){
   latestScan=null;currentContext=null;viewedId=null;
@@ -2514,7 +2512,7 @@ $('closePosition').onclick=()=>{
       n.app.closedTrades.push({id:uid(),position:clone(p),exitPrice,closedAt:Date.now()});
       delete n.app.positions[selected];
     });
-    loadForm();renderSymbols();renderClosed();renderProposals();renderMemory();
+    loadForm();renderSymbols();renderClosed();renderProposals();
     text('positionMessage','종료 손익 기록: '+money(r.net));
   }catch(e){text('positionMessage',e.message)}
 };
