@@ -1924,7 +1924,7 @@ function memoryContext(symbols,question=''){
   const past=state.history.slice().sort((a,b)=>
     Number(relevant(b))-Number(relevant(a))||b.createdAt-a.createdAt).slice(0,4);
   return {
-    explicitUserNotes:mem().notes,
+explicitUserNotes:'',
     pastAnalyses:past.map(r=>({
       id:r.id,symbols:r.symbols,asOf:r.asOf,excerpt:brief(r.text,3500),historicalNotCurrent:true
     })),
