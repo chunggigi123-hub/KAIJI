@@ -2401,25 +2401,7 @@ async function analyze(){
 
 /* ---------- 기록 화면 ---------- */
 
-function renderMemory(){
-  text('memoryStatus','분석 '+state.history.length+'건 / 대화 '+mem().chats.length+
-    '개 / 추천 '+mem().proposals.length+'건 / 실제 종료 '+app().closedTrades.length+
-    '건\n일부 관련 기록만 요청에 전달하며 모델 자체를 재학습하지 않습니다.');
-}
-function renderChat(){
-  $('chatLog').replaceChildren();
-  for(const c of mem().chats){
-    const div=document.createElement('div');div.className='message '+c.role;
-    const label=document.createElement('small');
-    label.textContent=(c.role==='user'?'나':'카이지')+' · '+date(c.createdAt)+
-      (c.dataAsOf?' · 자료 '+date(c.dataAsOf):'');
-    const body=document.createElement('div');body.textContent=c.text;
-    div.append(label,body);$('chatLog').append(div);
-  }
-  if(!mem().chats.length)text('chatLog','아직 대화가 없습니다.');
-  $('chatLog').scrollTop=$('chatLog').scrollHeight;
-  renderMemory();
-}
+
 function renderHistory(){
   const old=$('historySelect').value;
   $('historySelect').replaceChildren();
