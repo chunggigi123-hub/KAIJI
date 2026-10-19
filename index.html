@@ -2573,7 +2573,6 @@ document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{
   if(selected!=='BTCUSDT')draw($('altChart'),selected);
 });
 $('analyze').onclick=analyze;
-$('ask').onclick=ask;
 $('cancel').onclick=()=>{
   if(!job)return;
   job.cancelled=true;job.ctrl.abort();controls();
