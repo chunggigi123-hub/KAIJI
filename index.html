@@ -2576,10 +2576,20 @@ check();
       ...scanSymbols(scan)
     ])];
 
-    const latest=await freshAssets(symbols);
-    check();
+const latest=await freshAssets(symbols);
+check();
 
-    const id=uid();
+const directionScenarios=directionSymbols.map(symbol=>{
+  const asset=latest.assets.find(a=>a.symbol===symbol);
+
+  return buildDirectionScenario(
+    symbol,
+    asset,
+    directionHistory.get(symbol)
+  );
+});
+
+const id=uid();
     for(const c of Object.values(scan.candidates).filter(Boolean)){
       c.id=uid();c.analysisId=id;
     }
