@@ -2193,8 +2193,18 @@ async function analyze(){
     const scan=await fullScan(cfg);
     await attachHistoricalRates(scan);
 
-    progress('보고서용 BTC·선택 코인·후보 시장자료 갱신');
-    const symbols=[...new Set([...tracked(),...scanSymbols(scan)])];
+    progress('보고서용 BTC·전체 보유 코인·메이저·후보 자료 갱신');
+
+    const heldSymbols=Object.keys(app().positions);
+
+    const symbols=[...new Set([
+      'BTCUSDT',
+      selected,
+      ...heldSymbols,
+      ...REPORT_MAJOR_SYMBOLS,
+      ...scanSymbols(scan)
+    ])];
+
     const latest=await freshAssets(symbols);
     check();
 
