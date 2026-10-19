@@ -2463,8 +2463,6 @@ $('downloadHTML').onclick=()=>download(ORIGINAL_HTML,'kaiji-trader.html',true,'t
 $('selectCopy').onclick=()=>{$('copyText').focus();$('copyText').select()};
 $('closeCopy').onclick=()=>{$('copyDialog').close();$('copyText').value=''};
 $('copyReport').onclick=()=>copy($('reportMeta').textContent+'\n\n'+$('report').textContent);
-$('copyChat').onclick=()=>copy(mem().chats.map(c=>
-  (c.role==='user'?'나':'카이지')+' · '+date(c.createdAt)+'\n'+c.text).join('\n\n'));
 
 for(const id of [...PF,'linkedProposal']){
   $(id).addEventListener('input',()=>{
