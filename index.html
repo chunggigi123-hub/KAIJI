@@ -1928,9 +1928,7 @@ explicitUserNotes:'',
     pastAnalyses:past.map(r=>({
       id:r.id,symbols:r.symbols,asOf:r.asOf,excerpt:brief(r.text,3500),historicalNotCurrent:true
     })),
-    recentConversation:mem().chats.slice(-16).map(c=>({
-      role:c.role,text:brief(c.text,4500),createdAt:c.createdAt,dataAsOf:c.dataAsOf??null
-    })),
+recentConversation:[],
     closedTradeStatistics:closedStats(),
     recentClosedTrades:app().closedTrades.slice().sort((a,b)=>b.closedAt-a.closedAt).slice(0,20).map(t=>({
       symbol:t.position.symbol,direction:t.position.side===1?'LONG':'SHORT',
