@@ -568,6 +568,116 @@ const mem=()=>state.memory;
 const now=()=>Date.now()+offset;
 const clockGood=()=>clockAt>0&&Date.now()-clockAt<120000&&clockRTT<5000;
 const tracked=()=>[...new Set(['BTCUSDT',selected])];
+/* ---------- 보고서 시장 방향 분석 ---------- */
+
+// 이 앱에서 사용하는 메이저 비교군입니다.
+// 공식 시가총액 순위나 실시간 순위가 아닙니다.
+const REPORT_MAJOR_SYMBOLS=[
+  'ETHUSDT',
+  'BNBUSDT',
+  'SOLUSDT',
+  'XRPUSDT'
+];
+
+// BTC·메이저·일부 지수형 상품은 일반 알트 추세 집계에서 제외합니다.
+// 거래소에 새 지수형 상품이 추가되면 이 목록도 점검해야 합니다.
+const ALT_DIRECTION_EXCLUDED=new Set([
+  'BTCUSDT',
+  ...REPORT_MAJOR_SYMBOLS,
+  'BTCDOMUSDT',
+  'DEFIUSDT'
+]);
+
+function createAltDirectionSummary(){
+  return {
+    definition:
+      '이번 전체 탐색에서 유효한 완료 일봉·4시간봉을 확보한 종목 중 '+
+      '등록 보유 종목, BTC, 지정 메이저, 제외 목록 상품을 뺀 표본',
+
+    weighting:'종목별 동일 비중 집계. 시가총액·거래대금 가중 아님',
+
+    simultaneousSnapshot:false,
+    firstCheckedAt:null,
+    lastCheckedAt:null,
+
+    count:0,
+
+    daily:{
+      up:0,
+      down:0,
+      mixed:0
+    },
+
+    h4:{
+      up:0,
+      down:0,
+      mixed:0
+    },
+
+    alignedUp:0,
+    alignedDown:0,
+    otherAlignment:0,
+
+    examples:{
+      alignedUp:[],
+      alignedDown:[]
+    },
+
+    limitations:[
+      '전체 암호화폐 시장이 아닌 이번 탐색의 유효 표본이다.',
+      '보유 종목은 기존 후보 탐색에서 제외되어 이 집계에도 포함되지 않는다.',
+      '종목을 순차 조회하므로 동일 시각의 시장 전수조사가 아니다.',
+      '상승·하락 종목 비율은 미래 가격 상승·하락 확률이 아니다.',
+      '혼조는 횡보 확정이 아니라 해당 추세 규칙의 불일치 상태다.',
+      '예시 종목은 조회 순서상 예시이며 수익률 순위나 추천이 아니다.',
+      '이 집계에는 전 종목의 최신 5분·15분 체결 압력이 없다.'
+    ]
+  };
+}
+
+function addAltDirectionSample(summary,t){
+  if(ALT_DIRECTION_EXCLUDED.has(t.symbol))return;
+
+  const checkedAt=now();
+  const dailyTrend=trend(t.d);
+  const h4Trend=trend(t.h);
+
+  const key=v=>v===1?'up':v===-1?'down':'mixed';
+
+  if(summary.firstCheckedAt===null){
+    summary.firstCheckedAt=checkedAt;
+  }
+
+  summary.lastCheckedAt=checkedAt;
+  summary.count++;
+
+  summary.daily[key(dailyTrend)]++;
+  summary.h4[key(h4Trend)]++;
+
+  let exampleGroup=null;
+
+  if(dailyTrend===1&&h4Trend===1){
+    summary.alignedUp++;
+    exampleGroup='alignedUp';
+  }else if(dailyTrend===-1&&h4Trend===-1){
+    summary.alignedDown++;
+    exampleGroup='alignedDown';
+  }else{
+    summary.otherAlignment++;
+  }
+
+  if(
+    exampleGroup&&
+    summary.examples[exampleGroup].length<3
+  ){
+    summary.examples[exampleGroup].push({
+      symbol:t.symbol,
+      checkedAt,
+      dailyCloseTime:t.dailyCloseTime,
+      h4CloseTime:t.h4CloseTime
+    });
+  }
+}
 
 function number(id,optional=false){
   const el=$(id);
