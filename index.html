@@ -427,47 +427,7 @@ footer{text-align:center;font-size:11px;color:var(--muted);margin-top:24px}
   </div>
 </section>
 
-<section class="panel">
-  <div class="row wrap">
-    <h2>04 · 카이지에게 질문</h2>
-    <span class="badge">기억 참고 · 모델 재학습 아님</span>
-  </div>
-  <div class="two responsive" style="margin-top:13px">
-    <div>
-      <label for="memoryNotes">카이지가 기억할 기준·선호</label>
-      <textarea id="memoryNotes" rows="5" maxlength="6000" data-lock
-        placeholder="예: 나라면 어떻게 할지 먼저 말해줘. 손절 확대보다 위험 축소를 우선해줘."></textarea>
-      <button id="saveMemory" style="margin-top:8px" data-lock>기억 저장</button>
-      <div id="memoryStatus" class="notice"></div>
-    </div>
-    <div class="notice">카이지는 다음을 구분해서 답합니다.
-1. 나라면 지금 선택할 행동
-2. 그 행동을 선택한 근거
-3. 반대 근거와 손실 위험
-4. 판단을 바꾸는 조건
 
-기억에는 사용자 메모, 관련 과거 분석 최대 4건,
-최근 대화 최대 16개, 종료 거래 요약,
-최근 추천과 이후 가격 관찰 일부를 사용합니다.
-과거 판단이 틀렸다면 현재 자료를 우선합니다.</div>
-  </div>
-
-  <div id="chatLog" class="chat-log" style="margin-top:17px"></div>
-  <label for="question">질문</label>
-  <textarea id="question" rows="4" maxlength="8000" data-lock
-    placeholder="카이지, 네가 지금 내 포지션을 들고 있다면 유지할 거야, 줄일 거야, 정리할 거야?"></textarea>
-  <label style="font-weight:400">
-    <input id="chatFresh" type="checkbox" checked data-lock style="width:auto;min-height:auto">
-    질문 전 BTC·선택 코인·마지막 후보의 시장자료 갱신
-  </label>
-  <p class="tiny muted">전체 종목 재탐색·후보 가격 재설정·과거 관찰률 재계산은 하지 않습니다.</p>
-  <div class="actions">
-    <button id="ask" class="primary" data-lock>카이지에게 질문</button>
-    <button id="copyChat">대화 복사</button>
-    <button id="clearChat" data-lock>대화 삭제</button>
-  </div>
-  <div id="chatStatus" class="notice">질문 대기</div>
-</section>
 
 <section class="panel">
   <div class="row wrap">
