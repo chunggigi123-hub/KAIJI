@@ -2446,7 +2446,7 @@ function openHistory(id){
   progress('과거 기록 열람 중 · 현재 분석이 아닙니다.');
 }
 function renderAll(){
-  renderSymbols();loadForm();renderClosed();renderHistory();renderChat();renderProposals();
+  renderSymbols();loadForm();renderClosed();renderHistory();renderProposals();
   for(const id of SF)if(mem().settings[id]!=null)$(id).value=mem().settings[id];
   storageUI();renderMarket();
 }
