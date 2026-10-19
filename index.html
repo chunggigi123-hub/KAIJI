@@ -2582,19 +2582,7 @@ $('clearKey').onclick=()=>{
   $('apiKey').value='';
   text('aiError',job?'입력란 키를 지웠습니다. 실행 중 작업 중지는 별도입니다.':'API 키를 지웠습니다.');
 };
-$('saveMemory').onclick=()=>{
-  try{
-    mutable();change(n=>n.memory.notes=$('memoryNotes').value.trim());
-    renderMemory();$('memoryStatus').textContent+='\n기억 저장 완료';
-  }catch(e){text('memoryStatus',e.message)}
-};
-$('clearChat').onclick=()=>{
-  try{
-    mutable();
-    if(!confirm('대화만 삭제할까요? 분석·추천·거래·사용자 기억은 유지합니다.'))return;
-    change(n=>n.memory.chats=[]);renderChat();text('chatStatus','대화를 삭제했습니다.');
-  }catch(e){text('chatStatus',e.message)}
-};
+
 $('evaluate').onclick=async()=>{
   try{startJob('evaluate')}catch(e){text('evaluationStatus',e.message);return}
   try{
