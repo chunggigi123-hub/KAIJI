@@ -2189,16 +2189,7 @@ LONG/SHORT/둘 다 관망 중 한 가지 현재 선택과 반대 근거를 말�
 정적 자료·실제 주문 없음·미래 확률 미검증을 짧게 상기한다.
 `;
 
-const CHAT=COMMON+`
-이번 작업은 질문 답변이다.
-질문에 직접 답하고 전체 보고서를 반복하지 않는다.
-트레이더 행동 질문이면 "나라면 ..."으로 주된 선택부터 답한다.
-refreshRequested=false이면 과거 스냅샷을 현재 시장처럼 말하지 않는다.
-refreshRequested=true여도 전체 종목을 다시 탐색하거나 후보 계획을 재계산한 것은 아니다.
-candidateCurrentChecks는 기존 계획 대비 현재 가격·자료 상태일 뿐 재선정이 아니다.
-저장값·실제 주문·추천 기록을 변경했다고 말하지 않는다.
-새로운 후보 확정이 필요하면 종합 분석 재실행을 안내한다.
-`;
+
 
 async function requestAI(key,payload,instructions,maxTokens=7500){
   check();
