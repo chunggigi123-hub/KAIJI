@@ -61,7 +61,12 @@ input:focus-visible,select:focus-visible,button:focus-visible{
   outline:2px solid var(--purple);
   outline-offset:2px;
 }
-label{display:block;font-size:12px;color:var(--muted);margin:12px 0 5px}
+label{
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+  margin:12px 0 5px;
+}
 a{color:inherit}
 nav{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
 nav a{
@@ -73,7 +78,6 @@ nav a{
   font-size:13px;
 }
 .banner{
-  position:relative;
   margin-top:14px;
   background:#291e3b;
   border:1px solid var(--line);
@@ -87,7 +91,11 @@ nav a{
   object-fit:cover;
   object-position:center 42%;
 }
-.banner-fallback{padding:65px 20px;text-align:center;color:var(--muted)}
+.banner-fallback{
+  padding:65px 20px;
+  text-align:center;
+  color:var(--muted);
+}
 .panel{
   background:var(--panel);
   border:1px solid var(--line);
@@ -105,9 +113,20 @@ nav a{
 }
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  flex-wrap:wrap;
+}
 .actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px}
-.primary{background:var(--purple);color:#191022;border:0;font-weight:850}
+.primary{
+  background:var(--purple);
+  color:#191022;
+  border:0;
+  font-weight:850;
+}
 .muted{color:var(--muted)}
 .small{font-size:12px}
 .tiny{font-size:11px}
@@ -115,8 +134,11 @@ nav a{
 .negative{color:var(--red)}
 .warning{color:var(--yellow)}
 .badge{
-  font-size:11px;border:1px solid var(--line);
-  padding:4px 9px;border-radius:20px;color:var(--muted);
+  font-size:11px;
+  border:1px solid var(--line);
+  padding:4px 9px;
+  border-radius:20px;
+  color:var(--muted);
 }
 .notice{
   padding:12px 14px;
@@ -129,24 +151,57 @@ nav a{
   overflow-wrap:anywhere;
 }
 .risk{border-left-color:var(--yellow);color:#e4d6b9}
-.result{margin-top:17px;border-top:1px solid var(--line);padding-top:14px}
+.result{
+  margin-top:17px;
+  border-top:1px solid var(--line);
+  padding-top:14px;
+}
 .big{font-size:30px;font-weight:900;overflow-wrap:anywhere}
-.metrics{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:13px}
-.metric{padding:12px;border:1px solid var(--line);border-radius:8px}
+.metrics{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:10px;
+  margin-top:13px;
+}
+.metric{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:8px;
+}
 .metric span{display:block;color:var(--muted);font-size:11px}
-.metric strong{display:block;margin-top:4px;font-size:14px;overflow-wrap:anywhere}
+.metric strong{
+  display:block;
+  margin-top:4px;
+  font-size:14px;
+  overflow-wrap:anywhere;
+}
 .pre{white-space:pre-wrap;overflow-wrap:anywhere}
 .top-pick{border:2px solid var(--purple)}
 .chart{height:280px;margin-top:15px}
 canvas{width:100%;height:100%;display:block}
 .table-wrap{overflow-x:auto;margin-top:14px}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th,td{padding:10px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th,td{
+  padding:10px;
+  text-align:left;
+  border-bottom:1px solid var(--line);
+  white-space:nowrap;
+}
 th{color:var(--muted)}
 details{margin-top:12px}
 summary{cursor:pointer;color:var(--muted);font-size:12px}
-progress{width:100%;height:10px;accent-color:var(--purple);margin-top:12px}
-footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
+progress{
+  width:100%;
+  height:10px;
+  accent-color:var(--purple);
+  margin-top:12px;
+}
+footer{
+  margin-top:25px;
+  color:var(--muted);
+  text-align:center;
+  font-size:11px;
+}
 [hidden]{display:none!important}
 @media(max-width:760px){
   .grid{grid-template-columns:1fr}
@@ -167,12 +222,14 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
   </div>
 
   <h1>도박묵시록 카이지</h1>
-  <p class="muted small">수익은 계산하고, 방향은 확인하고, 위험은 먼저 본다.</p>
+  <p class="muted small">
+    수익은 계산하고, 방향은 확인하고, 위험은 먼저 본다.
+  </p>
 
   <div class="banner">
     <img id="banner" alt="도박묵시록 카이지 배너">
     <div id="bannerFallback" class="banner-fallback" hidden>
-      첨부 사진을 kaiji-banner.jpg로 저장하거나<br>
+      사진을 kaiji-banner.jpg로 저장하거나<br>
       아래 버튼으로 배너 사진을 선택하세요.
     </div>
   </div>
@@ -186,35 +243,70 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
   <div id="bannerStatus" class="tiny muted"></div>
 
   <nav>
+    <a href="#converter">USDT ↔ 원화</a>
     <a href="#futures">선물 계산기</a>
-    <a href="#spot">현물 계산기</a>
-    <a href="#recommendation">추천</a>
-    <a href="#market">BTC · 시장 분석</a>
+    <a href="#spot">원화 현물 계산기</a>
+    <a href="#recommendation">추천 · 분석 해석</a>
+    <a href="#market">BTC 방향성 전망</a>
   </nav>
 </header>
 
-<section class="panel">
+<!-- USDT / KRW 양방향 환산 -->
+<section id="converter" class="panel">
   <div class="row">
-    <h2>원화 환산 기준</h2>
+    <h2>원화 환산 기준 · USDT ↔ KRW</h2>
     <button id="fetchFx">USDT/KRW 참고 가격 조회</button>
   </div>
 
-  <label for="fx">1 USDT = 원 · 직접 입력 가능</label>
+  <label for="fx">환산 기준 · 1 USDT의 원화 가격</label>
   <input id="fx" type="number" min="0" step="any"
-    placeholder="직접 확인한 USDT 원화 가격을 입력하세요">
+    placeholder="예: 1450 · 실제 확인한 가격을 입력하세요">
 
-  <div id="fxStatus" class="notice">환산 가격 미입력. USDT 손익은 계산되며 원화 표시는 보류됩니다.</div>
+  <div id="fxStatus" class="notice">
+    환산 기준을 직접 입력하거나 참고 가격을 조회하세요.
+  </div>
+
+  <div class="two">
+    <div>
+      <label for="convertUsdt">USDT 금액 · 입력하면 원화로 변환</label>
+      <input id="convertUsdt" type="number"
+        min="0" step="any" value="1">
+    </div>
+    <div>
+      <label for="convertKrw">원화 금액 · 입력하면 USDT로 변환</label>
+      <input id="convertKrw" type="number"
+        min="0" step="any" placeholder="원화 금액">
+    </div>
+  </div>
+
+  <div class="actions">
+    <button id="oneUsdt">1 USDT 확인</button>
+    <button id="tenThousandKrw">10,000원 확인</button>
+  </div>
+
+  <div id="convertResult" class="notice" aria-live="polite">
+    환산 기준 입력 대기
+  </div>
+
   <p class="tiny muted">
-    자동 조회: CoinGecko Tether 원화 참고 가격.
-    실제 국내 거래소 매매 가격·달러 환율과 다를 수 있습니다.
-    원화 손익은 동일한 환산 가격을 적용하며 환율 변동에 따른 실제 원화 손익은 재현하지 않습니다.
+    USDT → 원화: USDT 금액 × 환산 기준.
+    원화 → USDT: 원화 금액 ÷ 환산 기준.<br>
+    자동 조회는 CoinGecko의 Tether 원화 참고 가격입니다.
+    실제 국내 거래소 USDT 가격·달러 환율과 다를 수 있으며
+    환전 수수료와 매수·매도 가격 차이는 포함하지 않습니다.<br>
+    이 환산 기준은 선물 손익과 분석 가격의 원화 참고 표시에 사용합니다.
+    아래 현물 계산기는 환산 기준과 무관하게 원화로 직접 계산합니다.
   </p>
 </section>
 
 <div class="grid">
+
+<!-- 선물: 기존 USDT 기준 유지 -->
 <section id="futures" class="panel">
   <h2>01 · 코인 선물 수익 계산기</h2>
-  <p class="small muted">USDT 선형 계약 · 격리 증거금 가정</p>
+  <p class="small muted">
+    USDT 선형 계약 · 격리 증거금 가정 · 원화 참고 환산 제공
+  </p>
 
   <label for="fSide">방향</label>
   <select id="fSide">
@@ -225,39 +317,49 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
   <div class="two">
     <div>
       <label for="fMargin">증거금 · USDT / 진입 비용 차감 전</label>
-      <input id="fMargin" type="number" min="0" step="any" value="100">
+      <input id="fMargin" type="number"
+        min="0" step="any" value="100">
     </div>
     <div>
       <label for="fLev">레버리지 · 배</label>
-      <input id="fLev" type="number" min="1" max="125" step="1" value="5">
+      <input id="fLev" type="number"
+        min="1" max="125" step="1" value="5">
     </div>
     <div>
       <label for="fEntry">진입 가격 · USDT</label>
-      <input id="fEntry" type="number" min="0" step="any" placeholder="진입 가격">
+      <input id="fEntry" type="number"
+        min="0" step="any" placeholder="진입 가격">
     </div>
     <div>
       <label for="fExit">예상 종료 가격 · USDT</label>
-      <input id="fExit" type="number" min="0" step="any" placeholder="목표 또는 종료 가격">
+      <input id="fExit" type="number"
+        min="0" step="any" placeholder="목표 또는 종료 가격">
     </div>
   </div>
 
-  <label for="fQty">실제 수량 · 선택 / 빈칸이면 증거금 × 레버리지로 추정</label>
-  <input id="fQty" type="number" min="0" step="any" placeholder="선택 입력">
+  <label for="fQty">
+    실제 수량 · 선택 / 빈칸이면 증거금 × 레버리지로 추정
+  </label>
+  <input id="fQty" type="number"
+    min="0" step="any" placeholder="선택 입력">
 
   <details>
     <summary>수수료 · 청산 계산 가정</summary>
     <div class="two">
       <div>
         <label for="fFeeIn">진입 수수료 · %</label>
-        <input id="fFeeIn" type="number" min="0" max="5" step=".001" value=".05">
+        <input id="fFeeIn" type="number"
+          min="0" max="5" step=".001" value=".05">
       </div>
       <div>
         <label for="fFeeOut">종료 수수료 · %</label>
-        <input id="fFeeOut" type="number" min="0" max="5" step=".001" value=".05">
+        <input id="fFeeOut" type="number"
+          min="0" max="5" step=".001" value=".05">
       </div>
       <div>
         <label for="fMmr">유지증거금률 가정 · %</label>
-        <input id="fMmr" type="number" min="0" max="20" step=".01" value=".5">
+        <input id="fMmr" type="number"
+          min="0" max="20" step=".01" value=".5">
       </div>
       <div>
         <label for="fFunding">누적 펀딩 지급액 · USDT / 수령은 음수</label>
@@ -272,12 +374,24 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
     <div id="fKrw" class="muted">—</div>
 
     <div class="metrics">
-      <div class="metric"><span>증거금 대비 수익률</span><strong id="fRoi">—</strong></div>
-      <div class="metric"><span>수량</span><strong id="fQuantity">—</strong></div>
-      <div class="metric"><span>진입 명목가치</span><strong id="fNotional">—</strong></div>
-      <div class="metric"><span>왕복 수수료</span><strong id="fFees">—</strong></div>
-      <div class="metric"><span>단순 추정 청산가 · USDT</span><strong id="fLiq">—</strong></div>
-      <div class="metric"><span>손익분기 종료 가격 · USDT</span><strong id="fBreak">—</strong></div>
+      <div class="metric">
+        <span>증거금 대비 수익률</span><strong id="fRoi">—</strong>
+      </div>
+      <div class="metric">
+        <span>수량</span><strong id="fQuantity">—</strong>
+      </div>
+      <div class="metric">
+        <span>진입 명목가치</span><strong id="fNotional">—</strong>
+      </div>
+      <div class="metric">
+        <span>왕복 수수료</span><strong id="fFees">—</strong>
+      </div>
+      <div class="metric">
+        <span>단순 추정 청산가 · USDT</span><strong id="fLiq">—</strong>
+      </div>
+      <div class="metric">
+        <span>손익분기 종료 가격 · USDT</span><strong id="fBreak">—</strong>
+      </div>
     </div>
   </div>
 
@@ -286,60 +400,86 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
 진입 수수료와 입력한 누적 펀딩을 증거금에서 차감한다고 가정합니다.
 
 유지증거금 공제액·구간별 요율·청산 수수료·슬리피지·다른 포지션은 반영하지 않습니다.
-실제 청산은 거래소 마크가격과 계좌 조건으로 결정됩니다.</div>
+실제 청산은 거래소 마크가격과 계좌 조건으로 결정됩니다.
+
+원화 손익은 입력한 단일 환산 기준을 적용한 참고값으로, 보유 기간의 환율 변동을 반영하지 않습니다.</div>
 </section>
 
+<!-- 현물: 모든 계산 원화 -->
 <section id="spot" class="panel">
   <h2>02 · 코인 매매 수익 계산기</h2>
-  <p class="small muted">현물 매수 → 전량 매도 · USDT 기준</p>
+  <p class="small muted">
+    현물 매수 → 전량 매도 · 모든 금액과 가격을 원화로 입력
+  </p>
 
-  <label for="sBudget">매수 총예산 · USDT / 매수 수수료 포함</label>
-  <input id="sBudget" type="number" min="0" step="any" value="1000">
+  <label for="sBudget">매수 총예산 · 원 / 매수 수수료 포함</label>
+  <input id="sBudget" type="number"
+    min="0" step="any" value="1000000">
 
   <div class="two">
     <div>
-      <label for="sBuy">매수 가격 · USDT</label>
-      <input id="sBuy" type="number" min="0" step="any" placeholder="매수 가격">
+      <label for="sBuy">코인 1개 매수 가격 · 원</label>
+      <input id="sBuy" type="number"
+        min="0" step="any" placeholder="예: 1000">
     </div>
     <div>
-      <label for="sSell">매도 가격 · USDT</label>
-      <input id="sSell" type="number" min="0" step="any" placeholder="매도 가격">
+      <label for="sSell">코인 1개 매도 가격 · 원</label>
+      <input id="sSell" type="number"
+        min="0" step="any" placeholder="예: 1100">
     </div>
     <div>
       <label for="sFeeIn">매수 수수료 · %</label>
-      <input id="sFeeIn" type="number" min="0" max="5" step=".001" value=".1">
+      <input id="sFeeIn" type="number"
+        min="0" max="5" step=".001" value=".05">
     </div>
     <div>
       <label for="sFeeOut">매도 수수료 · %</label>
-      <input id="sFeeOut" type="number" min="0" max="5" step=".001" value=".1">
+      <input id="sFeeOut" type="number"
+        min="0" max="5" step=".001" value=".05">
     </div>
   </div>
 
   <div class="result">
-    <div class="small muted">매도 후 예상 순손익</div>
+    <div class="small muted">매도 후 예상 순손익 · 원화</div>
     <div id="sNet" class="big">—</div>
-    <div id="sKrw" class="muted">—</div>
+    <div id="sSummary" class="muted small">—</div>
 
     <div class="metrics">
-      <div class="metric"><span>총예산 대비 수익률</span><strong id="sRoi">—</strong></div>
-      <div class="metric"><span>매수 수량</span><strong id="sQuantity">—</strong></div>
-      <div class="metric"><span>매도 후 수령액</span><strong id="sReceive">—</strong></div>
-      <div class="metric"><span>왕복 수수료</span><strong id="sFees">—</strong></div>
-      <div class="metric"><span>손익분기 매도가 · USDT</span><strong id="sBreak">—</strong></div>
-      <div class="metric"><span>매수 총예산 · 원화 환산</span><strong id="sBudgetKrw">—</strong></div>
+      <div class="metric">
+        <span>총예산 대비 수익률</span><strong id="sRoi">—</strong>
+      </div>
+      <div class="metric">
+        <span>매수 수량</span><strong id="sQuantity">—</strong>
+      </div>
+      <div class="metric">
+        <span>매도 후 수령액 · 원</span><strong id="sReceive">—</strong>
+      </div>
+      <div class="metric">
+        <span>왕복 수수료 · 원</span><strong id="sFees">—</strong>
+      </div>
+      <div class="metric">
+        <span>손익분기 매도가 · 원</span><strong id="sBreak">—</strong>
+      </div>
+      <div class="metric">
+        <span>매수 총예산 · 원</span><strong id="sBudgetView">—</strong>
+      </div>
     </div>
   </div>
 
   <div id="sMessage" class="notice"></div>
-  <div class="notice risk">수수료를 USDT로 별도 지급하는 가정입니다.
-코인 또는 BNB로 차감되는 실제 수수료 방식·호가 단위·최소 주문량·슬리피지·세금은 반영하지 않습니다.</div>
+  <div class="notice risk">수수료를 원화로 지급한다고 가정합니다.
+매수 총예산에서 매수 대금과 매수 수수료를 함께 지급하고, 매도 대금에서 매도 수수료를 차감합니다.
+
+실제 거래소의 수수료 반올림·코인 수량 절사·호가 단위·최소 주문량·슬리피지·세금은 반영하지 않습니다.
+계산은 소수점을 유지하며 표시할 때만 반올림합니다.</div>
 </section>
 </div>
 
+<!-- 추천 -->
 <section id="recommendation" class="panel">
   <div class="row">
-    <h2>03 · 기술적 분석 추천</h2>
-    <span class="badge">최우선 후보 1개</span>
+    <h2>03 · 기술적 분석 추천 · 해석</h2>
+    <span class="badge">상대 비교 후보 1개</span>
   </div>
 
   <div class="two">
@@ -352,9 +492,9 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
       </select>
     </div>
     <div>
-      <label>BTC·메이저 우선 / 거래대금 상위 후보 / 확인된 TradFi 포함</label>
+      <label for="analyze">BTC·메이저 우선 / 거래대금 상위 후보</label>
       <button id="analyze" class="primary" style="width:100%">
-        추천 + BTC 시장 분석
+        추천 분석 + BTC 방향성 예측
       </button>
     </div>
   </div>
@@ -363,16 +503,23 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
     <button id="cancel" disabled>분석 중지</button>
   </div>
 
-  <div id="scanStatus" class="notice">분석 버튼을 누르면 공개 시장 자료를 조회합니다.</div>
+  <div id="scanStatus" class="notice" role="status">
+    분석 버튼을 누르면 공개 시장 자료를 조회합니다.
+  </div>
   <progress id="progress" hidden></progress>
 
   <div class="card top-pick" style="margin-top:16px">
     <div class="row">
-      <h3 id="pickTitle">BTCUSDT · 기본 관찰 추천</h3>
-      <span id="pickBadge" class="badge">시장 자료 조회 전</span>
+      <h3 id="pickTitle">BTCUSDT · 기본 관찰 대상</h3>
+      <span id="pickBadge" class="badge">자료 조회 전</span>
     </div>
-    <div id="pickBody" class="pre small">비트코인을 우선 관찰합니다.
-아직 기술적 분석을 수행하지 않았으므로 매수·매도 방향과 가격 계획은 제시하지 않습니다.</div>
+    <div id="pickBody" class="pre small">아직 분석을 수행하지 않았습니다.
+버튼을 누르면 후보를 비교하고, 선정 이유와 지표의 의미를 문장으로 설명합니다.</div>
+
+    <details>
+      <summary>추천 종목 지표 원본 수치</summary>
+      <div id="pickIndicators" class="notice">분석 대기</div>
+    </details>
   </div>
 
   <div id="tradfiStatus" class="notice"></div>
@@ -398,48 +545,70 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
     <div class="notice">추세: 일봉·4시간봉 EMA20/50/200, EMA 기울기, ADX·DI
 모멘텀: RSI14, MACD(12·26·9), Stochastic(14·3)
 변동성: ATR14, Bollinger Bands(20·2)
-거래량: 상대 거래량, OBV 최근 방향, CMF20
+거래량: 상대 거래량, 최근 OBV 변화, CMF20
 차트: 완료 봉 고저점, 캔들 몸통·꼬리, 최근 20봉 범위
+
+지표 해석은 실제 계산 결과에 따라 문장을 구성하는 규칙 기반 방식입니다.
+외부 생성형 AI나 뉴스 분석을 사용하는 기능은 아닙니다.
 
 점수는 직접 정의한 상대 비교 규칙이며 성공확률·검증된 기대수익이 아닙니다.
 대부분의 지표는 같은 가격·거래량에서 파생되어 서로 독립적이지 않습니다.
-전체 거래소의 모든 상품을 전수 탐색하는 방식은 아닙니다.
+전체 거래소의 모든 상품을 전수 탐색하지 않습니다.
 
-후보 조건이 약하면 관찰 추천으로 표시합니다.
-유효 자료가 전혀 없으면 BTC 관찰 추천을 표시하고 진입 판단을 보류합니다.
-수익을 보장하거나 시장 자료 없는 매수·매도 신호를 만들지 않습니다.</div>
+조건이 약하면 관찰 대상으로 표시합니다.
+유효 자료가 없으면 방향과 목표 가격을 만들지 않습니다.</div>
   </details>
 </section>
 
+<!-- BTC 시장 분석 -->
 <section id="market" class="panel">
   <div class="row">
-    <h2>04 · 비트코인 중심 시장 현황</h2>
+    <h2>04 · 비트코인 방향성 예측 · 시장 분석</h2>
     <span id="marketTime" class="badge">분석 대기</span>
   </div>
 
   <div class="grid" style="margin-top:16px">
     <div class="card">
-      <h3>BTCUSDT · 4시간봉</h3>
+      <h3>BTCUSDT · 완료 4시간봉</h3>
       <div id="btcPrice" class="big">—</div>
       <div id="btcChange" class="small muted"></div>
-      <div class="chart"><canvas id="btcChart"></canvas></div>
+      <div class="chart">
+        <canvas id="btcChart" aria-label="비트코인 완료 4시간봉 차트"></canvas>
+      </div>
+
       <div id="btcTechnical" class="notice">분석 대기</div>
+
+      <details>
+        <summary>BTC 지표 원본 수치</summary>
+        <div id="btcIndicators" class="notice">분석 대기</div>
+      </details>
     </div>
 
     <div class="card">
-      <h3>시장 판단 · 시나리오</h3>
-      <div id="marketReport" class="pre small">추천 + BTC 시장 분석 버튼을 눌러 주세요.</div>
+      <h3>향후 24~72시간 방향성 전망</h3>
+      <div id="forecastTitle" class="big">분석 대기</div>
+      <div id="forecastBadge" class="badge"
+        style="display:inline-block;margin:8px 0">
+        확정 예측 아님
+      </div>
+      <div id="marketReport" class="pre small">
+        추천 분석 + BTC 방향성 예측 버튼을 눌러 주세요.
+      </div>
     </div>
   </div>
 
   <div id="breadth" class="notice"></div>
 
-  <div class="notice risk">시세는 분석 당시의 정적 자료이며 자동 실시간 갱신하지 않습니다.
-시장 분석은 Binance USDT 무기한 선물과 선택된 표본에 한정됩니다.
-공식 BTC 도미넌스·알트시즌 지수·뉴스·거시경제 지표는 조회하지 않습니다.
+  <div class="notice risk">방향성 전망은 완료 일봉·4시간봉을 이용한 조건부 기술적 추정입니다.
+24~72시간은 참고 관찰 기간이며, 목표 가격 도달 시간이나 적중률을 의미하지 않습니다.
+ATR 투영 가격은 통계적 예측구간이나 검증된 목표가가 아닙니다.
+
+시세는 분석 당시의 정적 자료입니다. 자동 실시간 갱신하지 않습니다.
+분석 대상은 Binance USDT 무기한 선물과 선택된 표본입니다.
+공식 BTC 도미넌스·알트시즌 지수·뉴스·거시경제·실시간 주문장은 조회하지 않습니다.
 
 거래소 API는 지역·네트워크·브라우저 정책에 따라 차단될 수 있습니다.
-거래소가 접근을 제한하면 숫자를 만들어 대체하지 않습니다.</div>
+자료를 확인하지 못하면 숫자를 만들어 대체하지 않습니다.</div>
 </section>
 
 <footer>
@@ -452,1372 +621,2059 @@ footer{margin-top:25px;color:var(--muted);text-align:center;font-size:11px}
 <script>
 'use strict';
 
-const $=id=>document.getElementById(id);
-const set=(id,value)=>$(id).textContent=value;
-const finite=Number.isFinite;
-const sum=a=>a.reduce((x,y)=>x+y,0);
-const clamp=(x,a,b)=>Math.max(a,Math.min(b,x));
-const mean=a=>a.length?sum(a)/a.length:null;
-const DAY=86400000;
-const H4=14400000;
-const REST='https://fapi.binance.com';
+/* ===================================================
+   공통
+=================================================== */
 
-const MAJORS=[
-  'BTCUSDT','ETHUSDT','BNBUSDT',
-  'SOLUSDT','XRPUSDT','ADAUSDT','DOGEUSDT'
+const $ = id => document.getElementById(id);
+const set = (id, value) => { $(id).textContent = value; };
+const finite = Number.isFinite;
+const sum = a => a.reduce((x, y) => x + y, 0);
+const mean = a => a.length ? sum(a) / a.length : null;
+const clamp = (x, a, b) => Math.max(a, Math.min(b, x));
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const DAY = 86400000;
+const H4 = 14400000;
+const REST = 'https://fapi.binance.com';
+
+const MAJORS = [
+  'BTCUSDT', 'ETHUSDT', 'BNBUSDT',
+  'SOLUSDT', 'XRPUSDT', 'ADAUSDT', 'DOGEUSDT'
 ];
-const NON_COIN=new Set(['BTCDOMUSDT','DEFIUSDT']);
 
-const fmt=(x,d=2)=>finite(x)?
-  x.toLocaleString('ko-KR',{
-    maximumFractionDigits:d,
-    minimumFractionDigits:d
-  }):'—';
+const NON_COIN = new Set(['BTCDOMUSDT', 'DEFIUSDT']);
 
-const signed=(x,d=2)=>finite(x)?
-  (x>0?'+':'')+fmt(x,d):'—';
-
-function price(x){
-  if(!finite(x))return '—';
-  if(x===0)return '0';
-  const d=clamp(4-Math.floor(Math.log10(Math.abs(x))),2,10);
-  return fmt(x,d);
+function fmt(x, d = 2) {
+  return finite(x)
+    ? x.toLocaleString('ko-KR', {
+        maximumFractionDigits: d,
+        minimumFractionDigits: d
+      })
+    : '—';
 }
 
-const stamp=x=>new Date(x).toLocaleString('ko-KR');
-const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function signed(x, d = 2) {
+  return finite(x) ? (x > 0 ? '+' : '') + fmt(x, d) : '—';
+}
 
-function inputNumber(id,allowZero=false){
-  const el=$(id);
-  const value=el.value.trim();
-  const x=Number(value);
+function price(x) {
+  if (!finite(x)) return '—';
+  if (x === 0) return '0';
+  const d = clamp(4 - Math.floor(Math.log10(Math.abs(x))), 2, 10);
+  return fmt(x, d);
+}
 
-  if(!value||el.validity.badInput||!finite(x))
+function won(x) {
+  if (!finite(x)) return '—';
+  // 1원 미만 값도 표시할 수 있도록 작은 금액에 소수점 적용
+  const d = x !== 0 && Math.abs(x) < 1 ? 6 : 2;
+  return fmt(x, d) + ' 원';
+}
+
+function signedWon(x) {
+  return finite(x) ? (x > 0 ? '+' : '') + won(x) : '—';
+}
+
+const stamp = x => new Date(x).toLocaleString('ko-KR');
+const trendText = t => t === 1 ? '상승 우세' : t === -1 ? '하락 우세' : '혼조';
+
+function inputNumber(id, allowZero = false) {
+  const el = $(id);
+  const text = el.value.trim();
+  const x = Number(text);
+
+  if (!text || el.validity.badInput || !finite(x)) {
     throw new Error('가격·금액을 올바르게 입력하세요.');
+  }
 
-  if(allowZero?x<0:x<=0)
-    throw new Error('가격·금액은 양수, 수수료는 0 이상이어야 합니다.');
+  if (allowZero ? x < 0 : x <= 0) {
+    throw new Error('가격·금액은 양수, 수수료와 환산 금액은 0 이상이어야 합니다.');
+  }
 
   return x;
 }
 
-function feeValue(id){
-  const x=inputNumber(id,true);
-  if(x>5)throw new Error('수수료는 0~5% 범위로 입력하세요.');
-  return x/100;
+function feeValue(id) {
+  const x = inputNumber(id, true);
+  if (x > 5) throw new Error('수수료는 0~5% 범위로 입력하세요.');
+  return x / 100;
 }
 
-function fxValue(){
-  const x=Number($('fx').value);
-  return $('fx').value.trim()&&finite(x)&&x>0?x:null;
+function fxValue() {
+  const text = $('fx').value.trim();
+  const x = Number(text);
+  return text && finite(x) && x > 0 ? x : null;
 }
 
-function krw(x){
-  const fx=fxValue();
-  if(fx===null)return '원화 환산 가격 미입력';
-  return finite(x*fx)?fmt(x*fx,0)+' 원':'환산값 범위 초과';
+function krw(usdt) {
+  const fx = fxValue();
+  if (fx === null) return '원화 환산 기준 미입력';
+  return finite(usdt * fx) ? won(usdt * fx) : '환산값 범위 초과';
 }
 
-function profitStyle(id,x){
-  $(id).className='big '+(x>=0?'positive':'negative');
+function profitStyle(id, x) {
+  $(id).className = 'big ' + (
+    x > 0 ? 'positive' : x < 0 ? 'negative' : 'muted'
+  );
 }
 
-function clearFields(ids){
-  ids.forEach(id=>set(id,'—'));
+function clearFields(ids) {
+  ids.forEach(id => set(id, '—'));
 }
 
 /* ===================================================
-   배너: 사진은 사용자 브라우저에만 저장
+   배너
 =================================================== */
 
-const BANNER_KEY='kaiji-only-banner-v1';
+const BANNER_KEY = 'kaiji-only-banner-v1';
 
-function showBanner(src){
-  const img=$('banner');
-  img.hidden=false;
-  $('bannerFallback').hidden=true;
+function showBanner(src) {
+  const img = $('banner');
+  img.hidden = false;
+  $('bannerFallback').hidden = true;
 
-  img.onerror=()=>{
-    img.hidden=true;
-    $('bannerFallback').hidden=false;
+  img.onerror = () => {
+    img.hidden = true;
+    $('bannerFallback').hidden = false;
   };
-  img.onload=()=>{
-    img.hidden=false;
-    $('bannerFallback').hidden=true;
+
+  img.onload = () => {
+    img.hidden = false;
+    $('bannerFallback').hidden = true;
   };
-  img.src=src;
+
+  img.src = src;
 }
 
-let savedBanner=null;
-try{savedBanner=localStorage.getItem(BANNER_KEY)}catch{}
-showBanner(savedBanner||'kaiji-banner.jpg');
+let savedBanner = null;
+try {
+  savedBanner = localStorage.getItem(BANNER_KEY);
+} catch {}
 
-$('chooseBanner').onclick=()=>$('bannerFile').click();
+showBanner(savedBanner || 'kaiji-banner.jpg');
 
-$('resetBanner').onclick=()=>{
-  try{localStorage.removeItem(BANNER_KEY)}catch{}
+$('chooseBanner').onclick = () => $('bannerFile').click();
+
+$('resetBanner').onclick = () => {
+  try {
+    localStorage.removeItem(BANNER_KEY);
+  } catch {}
+
   showBanner('kaiji-banner.jpg');
-  set('bannerStatus','같은 폴더의 kaiji-banner.jpg를 사용합니다.');
+  set('bannerStatus', '같은 폴더의 kaiji-banner.jpg를 사용합니다.');
 };
 
-$('bannerFile').onchange=async e=>{
+$('bannerFile').onchange = async event => {
   let url;
-  try{
-    const file=e.target.files?.[0];
-    if(!file)return;
 
-    if(!['image/jpeg','image/png','image/webp'].includes(file.type))
+  try {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
       throw new Error('JPG·PNG·WebP 이미지를 선택하세요.');
+    }
 
-    if(file.size>15*1024*1024)
+    if (file.size > 15 * 1024 * 1024) {
       throw new Error('15MB 이하 이미지를 선택하세요.');
+    }
 
-    url=URL.createObjectURL(file);
-    const img=new Image();
+    url = URL.createObjectURL(file);
+    const image = new Image();
 
-    await new Promise((resolve,reject)=>{
-      img.onload=resolve;
-      img.onerror=()=>reject(new Error('이미지를 읽지 못했습니다.'));
-      img.src=url;
+    await new Promise((resolve, reject) => {
+      image.onload = resolve;
+      image.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'));
+      image.src = url;
     });
 
-    const canvas=document.createElement('canvas');
-    const scale=Math.min(1,1600/img.naturalWidth);
-    canvas.width=Math.round(img.naturalWidth*scale);
-    canvas.height=Math.round(img.naturalHeight*scale);
-
-    canvas.getContext('2d').drawImage(
-      img,0,0,canvas.width,canvas.height
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(
+      1,
+      1600 / image.naturalWidth,
+      1600 / image.naturalHeight
     );
 
-    const data=canvas.toDataURL('image/jpeg',.85);
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+
+    canvas.getContext('2d').drawImage(
+      image, 0, 0, canvas.width, canvas.height
+    );
+
+    const data = canvas.toDataURL('image/jpeg', 0.85);
     showBanner(data);
 
-    try{
-      localStorage.setItem(BANNER_KEY,data);
-      set('bannerStatus','배너를 이 브라우저에 저장했습니다.');
-    }catch{
-      set('bannerStatus','사진은 적용했지만 브라우저 저장에는 실패했습니다.');
+    try {
+      localStorage.setItem(BANNER_KEY, data);
+      set('bannerStatus', '배너를 이 브라우저에 저장했습니다.');
+    } catch {
+      set('bannerStatus', '사진은 적용했지만 브라우저 저장에는 실패했습니다.');
     }
-  }catch(e){
-    set('bannerStatus',e.message);
-  }finally{
-    if(url)URL.revokeObjectURL(url);
-    $('bannerFile').value='';
+  } catch (error) {
+    set('bannerStatus', error.message);
+  } finally {
+    if (url) URL.revokeObjectURL(url);
+    $('bannerFile').value = '';
   }
 };
 
 /* ===================================================
-   계산기
+   USDT ↔ KRW 양방향 환산
 =================================================== */
 
-function calcFutures(){
-  const ids=[
-    'fNet','fKrw','fRoi','fQuantity',
-    'fNotional','fFees','fLiq','fBreak'
+// 환산 기준 변경 시 마지막으로 직접 입력한 쪽의 금액을 유지합니다.
+let conversionSource = 'usdt';
+let fxRevision = 0;
+let lastSnapshot = null;
+
+function updateConversion(source = conversionSource) {
+  conversionSource = source;
+
+  const sourceId = source === 'usdt' ? 'convertUsdt' : 'convertKrw';
+  const targetId = source === 'usdt' ? 'convertKrw' : 'convertUsdt';
+  const fx = fxValue();
+
+  try {
+    if (fx === null) {
+      $(targetId).value = '';
+      set('convertResult', '먼저 1 USDT의 원화 가격을 입력하세요.');
+      return;
+    }
+
+    const amount = inputNumber(sourceId, true);
+    const converted = source === 'usdt' ? amount * fx : amount / fx;
+
+    if (!finite(converted)) {
+      throw new Error('환산값이 계산 가능한 범위를 초과했습니다.');
+    }
+
+    // 내부 계산값은 그대로 사용하며 입력창만 유효 자릿수로 정리합니다.
+    $(targetId).value = String(Number(converted.toPrecision(15)));
+
+    const usdt = source === 'usdt' ? amount : converted;
+    const krwAmount = source === 'krw' ? amount : converted;
+
+    set('convertResult',
+      fmt(usdt, 8) + ' USDT = ' + won(krwAmount) +
+      '\n기준: 1 USDT = ' + won(fx) +
+      '\n' + (
+        source === 'usdt'
+          ? 'USDT 금액 × 환산 기준으로 계산했습니다.'
+          : '원화 금액 ÷ 환산 기준으로 계산했습니다.'
+      )
+    );
+  } catch (error) {
+    $(targetId).value = '';
+    set('convertResult', error.message);
+  }
+}
+
+function refreshFxDependentViews() {
+  updateConversion();
+  calcFutures();
+
+  // 현물 계산기는 환율과 무관하므로 다시 계산할 필요가 없습니다.
+  if (lastSnapshot && !running) {
+    renderPick(
+      lastSnapshot.top,
+      lastSnapshot.topMark,
+      lastSnapshot.markError
+    );
+    renderMarket(lastSnapshot.items, lastSnapshot.btcMark);
+  }
+}
+
+$('convertUsdt').addEventListener('input', () => updateConversion('usdt'));
+$('convertKrw').addEventListener('input', () => updateConversion('krw'));
+
+$('oneUsdt').onclick = () => {
+  $('convertUsdt').value = '1';
+  updateConversion('usdt');
+};
+
+$('tenThousandKrw').onclick = () => {
+  $('convertKrw').value = '10000';
+  updateConversion('krw');
+};
+
+$('fx').addEventListener('input', () => {
+  fxRevision++;
+
+  set('fxStatus',
+    fxValue() === null
+      ? '유효한 환산 기준을 입력하세요.'
+      : '직접 입력한 기준: 1 USDT = ' + won(fxValue())
+  );
+
+  refreshFxDependentViews();
+});
+
+/* ===================================================
+   선물 계산기
+=================================================== */
+
+function calcFutures() {
+  const ids = [
+    'fNet', 'fKrw', 'fRoi', 'fQuantity',
+    'fNotional', 'fFees', 'fLiq', 'fBreak'
   ];
 
-  try{
-    const side=Number($('fSide').value);
-    const margin=inputNumber('fMargin');
-    const lev=inputNumber('fLev');
+  try {
+    const side = Number($('fSide').value);
+    const margin = inputNumber('fMargin');
+    const lev = inputNumber('fLev');
 
-    if(!Number.isInteger(lev)||lev>125)
+    if (!Number.isInteger(lev) || lev > 125) {
       throw new Error('레버리지는 정수 1~125배로 입력하세요.');
+    }
 
-    const entry=inputNumber('fEntry');
-    const exit=inputNumber('fExit');
-    const feeIn=feeValue('fFeeIn');
-    const feeOut=feeValue('fFeeOut');
-    const mm=inputNumber('fMmr',true)/100;
+    const entry = inputNumber('fEntry');
+    const exit = inputNumber('fExit');
+    const feeIn = feeValue('fFeeIn');
+    const feeOut = feeValue('fFeeOut');
+    const mm = inputNumber('fMmr', true) / 100;
 
-    if(mm>.2)throw new Error('유지증거금률은 0~20%로 입력하세요.');
+    if (mm > 0.2) {
+      throw new Error('유지증거금률은 0~20%로 입력하세요.');
+    }
 
-    const fundText=$('fFunding').value.trim();
-    const funding=Number(fundText);
+    const fundingText = $('fFunding').value.trim();
+    const funding = Number(fundingText);
 
-    if(!fundText||!finite(funding))
+    if (!fundingText || !finite(funding)) {
       throw new Error('펀딩 지급액을 입력하세요. 수령액은 음수입니다.');
+    }
 
-    const actualQty=$('fQty').value.trim()!=='';
-    const q=actualQty?inputNumber('fQty'):margin*lev/entry;
+    const actualQty = $('fQty').value.trim() !== '';
+    const q = actualQty
+      ? inputNumber('fQty')
+      : margin * lev / entry;
 
-    const notional=q*entry;
-    const inCost=notional*feeIn;
-    const fees=inCost+q*exit*feeOut;
-    const gross=side*q*(exit-entry);
-    const net=gross-fees-funding;
-    const roi=net/margin*100;
+    const notional = q * entry;
+    const inCost = notional * feeIn;
+    const fees = inCost + q * exit * feeOut;
+    const gross = side * q * (exit - entry);
+    const net = gross - fees - funding;
+    const roi = net / margin * 100;
+    const equityBase = margin - inCost - funding;
 
-    // 입력 증거금에서 진입 수수료·누적 펀딩 차감
-    const equityBase=margin-inCost-funding;
+    const rawLiq = side === 1
+      ? (notional - equityBase) / (q * (1 - mm))
+      : (notional + equityBase) / (q * (1 + mm));
 
-    // equityBase + side*q*(P-entry) = q*P*mm
-    const rawLiq=side===1?
-      (notional-equityBase)/(q*(1-mm)):
-      (notional+equityBase)/(q*(1+mm));
+    const breakEven = (
+      side * entry + entry * feeIn + funding / q
+    ) / (side - feeOut);
 
-    const breakEven=(
-      side*entry+entry*feeIn+funding/q
-    )/(side-feeOut);
-
-    if(![
-      q,notional,fees,gross,net,roi,
-      equityBase,rawLiq,breakEven
-    ].every(finite))
+    if (![
+      q, notional, fees, gross, net, roi,
+      equityBase, rawLiq, breakEven
+    ].every(finite) || q <= 0) {
       throw new Error('입력값이 계산 가능한 범위를 초과했습니다.');
+    }
 
-    set('fNet',signed(net)+' USDT');
-    profitStyle('fNet',net);
-    set('fKrw',krw(net));
-    set('fRoi',signed(roi)+'%');
-    set('fQuantity',fmt(q,10)+(actualQty?' · 실제 입력':' · 추정'));
-    set('fNotional',fmt(notional)+' USDT');
-    set('fFees',fmt(fees,4)+' USDT');
-    set('fBreak',breakEven>0?price(breakEven):'양수 손익분기점 없음');
+    set('fNet', signed(net) + ' USDT');
+    profitStyle('fNet', net);
+    set('fKrw', '원화 참고: ' + krw(net));
+    set('fRoi', signed(roi) + '%');
+    set('fQuantity', fmt(q, 10) + (actualQty ? ' · 실제 입력' : ' · 추정'));
+    set('fNotional', fmt(notional) + ' USDT');
+    set('fFees', fmt(fees, 4) + ' USDT');
+    set('fBreak',
+      breakEven > 0 ? price(breakEven) : '양수 손익분기점 없음'
+    );
 
-    const invalidAtEntry=equityBase<=notional*mm;
-    const liq=rawLiq>0?rawLiq:null;
+    const invalidAtEntry = equityBase <= notional * mm;
+    const liq = rawLiq > 0 ? rawLiq : null;
 
-    set('fLiq',invalidAtEntry?
-      '입력 조건상 진입 시 유지증거금 부족':
-      liq===null?'양수 청산가 없음 · 단순 모형':price(liq));
+    set('fLiq',
+      invalidAtEntry
+        ? '입력 조건상 유지증거금 부족'
+        : liq === null
+          ? '양수 청산가 없음 · 단순 모형'
+          : price(liq)
+    );
 
-    const warnings=[
-      '총손익 '+signed(gross)+' USDT',
-      '펀딩 지급액 '+signed(funding)+' USDT · 음수는 수령',
-      '실효 레버리지 '+fmt(notional/margin,2)+'배'
+    const warnings = [
+      '수수료 차감 전 손익: ' + signed(gross) + ' USDT',
+      '펀딩 지급액: ' + signed(funding) + ' USDT · 음수는 수령',
+      '실효 레버리지: ' + fmt(notional / margin, 2) + '배'
     ];
 
-    if(invalidAtEntry)
+    if (invalidAtEntry) {
       warnings.push('⚠ 진입 가격부터 유지증거금 요건을 충족하지 못하는 가정입니다.');
+    }
 
-    if(!invalidAtEntry&&liq!==null&&side*(exit-liq)<=0)
-      warnings.push('⚠ 종료 가격이 추정 청산 영역입니다. 표시 손익대로 종료되기 전에 청산될 수 있습니다.');
+    if (!invalidAtEntry && liq !== null && side * (exit - liq) <= 0) {
+      warnings.push('⚠ 종료 가격이 추정 청산 영역입니다. 예상 종료 전에 청산될 수 있습니다.');
+    }
 
-    if(actualQty&&Math.abs(notional/margin-lev)>.01)
-      warnings.push('실제 수량 입력을 우선 사용하므로 설정 레버리지와 실효 레버리지가 다를 수 있습니다.');
+    if (actualQty && Math.abs(notional / margin - lev) > 0.01) {
+      warnings.push('실제 수량을 우선 사용하므로 설정 레버리지와 실효 레버리지가 다를 수 있습니다.');
+    }
 
-    if(!actualQty)
-      warnings.push('추정 수량은 진입 수수료 지급 여유를 따로 확보하지 않은 단순 수량입니다.');
+    if (!actualQty) {
+      warnings.push('추정 수량은 진입 수수료 지급 여유를 별도로 확보하지 않은 단순 수량입니다.');
+    }
 
-    set('fMessage',warnings.join('\n'));
-  }catch(e){
+    warnings.push('목표 가격까지 가는 중간 경로의 청산 위험은 이 계산으로 확인할 수 없습니다.');
+
+    set('fMessage', warnings.join('\n'));
+  } catch (error) {
     clearFields(ids);
-    $('fNet').className='big';
-    set('fMessage',e.message);
+    $('fNet').className = 'big';
+    set('fMessage', error.message);
   }
 }
 
-function calcSpot(){
-  const ids=[
-    'sNet','sKrw','sRoi','sQuantity','sReceive',
-    'sFees','sBreak','sBudgetKrw'
+/* ===================================================
+   현물 계산기: 원화 기준
+=================================================== */
+
+function calcSpot() {
+  const ids = [
+    'sNet', 'sSummary', 'sRoi', 'sQuantity',
+    'sReceive', 'sFees', 'sBreak', 'sBudgetView'
   ];
 
-  try{
-    const budget=inputNumber('sBudget');
-    const buy=inputNumber('sBuy');
-    const sell=inputNumber('sSell');
-    const fi=feeValue('sFeeIn');
-    const fo=feeValue('sFeeOut');
+  try {
+    const budget = inputNumber('sBudget');
+    const buy = inputNumber('sBuy');
+    const sell = inputNumber('sSell');
+    const fi = feeValue('sFeeIn');
+    const fo = feeValue('sFeeOut');
 
-    const qty=budget/(buy*(1+fi));
-    const buyFee=qty*buy*fi;
-    const sellFee=qty*sell*fo;
-    const receive=qty*sell-sellFee;
-    const net=receive-budget;
-    const roi=net/budget*100;
-    const be=buy*(1+fi)/(1-fo);
+    // budget = 매수 대금 + 매수 수수료
+    const qty = budget / (buy * (1 + fi));
+    const buyAmount = qty * buy;
+    const buyFee = buyAmount * fi;
 
-    if(![qty,buyFee,sellFee,receive,net,roi,be].every(finite))
+    const sellAmount = qty * sell;
+    const sellFee = sellAmount * fo;
+    const receive = sellAmount - sellFee;
+
+    const net = receive - budget;
+    const roi = net / budget * 100;
+    const breakEven = buy * (1 + fi) / (1 - fo);
+    const priceChange = (sell / buy - 1) * 100;
+
+    if (![
+      qty, buyAmount, buyFee, sellAmount, sellFee,
+      receive, net, roi, breakEven, priceChange
+    ].every(finite) || qty <= 0) {
       throw new Error('입력값이 계산 가능한 범위를 초과했습니다.');
+    }
 
-    set('sNet',signed(net)+' USDT');
-    profitStyle('sNet',net);
-    set('sKrw',krw(net));
-    set('sRoi',signed(roi)+'%');
-    set('sQuantity',fmt(qty,10));
-    set('sReceive',fmt(receive)+' USDT');
-    set('sFees',fmt(buyFee+sellFee,4)+' USDT');
-    set('sBreak',price(be));
-    set('sBudgetKrw',krw(budget));
-    set('sMessage',
-      '매수 수수료 '+fmt(buyFee,4)+' USDT'+
-      '\n매도 수수료 '+fmt(sellFee,4)+' USDT'+
-      '\n매수 총예산에서 매수 수수료까지 지급하는 방식입니다.'
+    set('sNet', signedWon(net));
+    profitStyle('sNet', net);
+
+    set('sSummary',
+      '총예산 ' + won(budget) +
+      ' → 매도 후 ' + won(receive)
     );
-  }catch(e){
+
+    set('sRoi', signed(roi) + '%');
+    set('sQuantity', fmt(qty, 10) + ' 개');
+    set('sReceive', won(receive));
+    set('sFees', won(buyFee + sellFee));
+    set('sBreak', price(breakEven) + ' 원');
+    set('sBudgetView', won(budget));
+
+    set('sMessage', [
+      '실제 매수 대금: ' + won(buyAmount),
+      '매수 수수료: ' + won(buyFee),
+      '매도 총대금: ' + won(sellAmount),
+      '매도 수수료: ' + won(sellFee),
+      '',
+      '코인 가격 변동률: ' + signed(priceChange) + '%',
+      '수수료 반영 수익률: ' + signed(roi) + '%',
+      '',
+      '매수 수량 = 총예산 ÷ [매수 가격 × (1 + 매수 수수료율)]',
+      '순손익 = 매도 대금 − 매도 수수료 − 매수 총예산',
+      '모든 금액은 원화 기준이며 USDT 환산 가격은 사용하지 않습니다.'
+    ].join('\n'));
+  } catch (error) {
     clearFields(ids);
-    $('sNet').className='big';
-    set('sMessage',e.message);
+    $('sNet').className = 'big';
+    set('sMessage', error.message);
   }
 }
 
 [
-  'fSide','fMargin','fLev','fEntry','fExit','fQty',
-  'fFeeIn','fFeeOut','fMmr','fFunding'
-].forEach(id=>$(id).addEventListener('input',calcFutures));
+  'fSide', 'fMargin', 'fLev', 'fEntry', 'fExit', 'fQty',
+  'fFeeIn', 'fFeeOut', 'fMmr', 'fFunding'
+].forEach(id => $(id).addEventListener('input', calcFutures));
 
 [
-  'sBudget','sBuy','sSell','sFeeIn','sFeeOut'
-].forEach(id=>$(id).addEventListener('input',calcSpot));
-
-$('fx').oninput=()=>{
-  set('fxStatus',fxValue()===null?
-    '유효한 환산 가격을 입력하세요. 원화 표시는 보류됩니다.':
-    '직접 입력한 환산 가격: 1 USDT = '+fmt(fxValue())+' 원'
-  );
-  calcFutures();
-  calcSpot();
-};
+  'sBudget', 'sBuy', 'sSell', 'sFeeIn', 'sFeeOut'
+].forEach(id => $(id).addEventListener('input', calcSpot));
 
 /* ===================================================
    네트워크
 =================================================== */
 
-let running=false;
-let owner=null;
-let blockedUntil=0;
-let marketNow=0;
-let btcBars=[];
-let latestItems=[];
+let running = false;
+let owner = null;
+let blockedUntil = 0;
+let marketNow = 0;
+let btcBars = [];
 
-async function getJSON(url,outerSignal=null){
-  const controller=new AbortController();
-  const abort=()=>controller.abort();
+async function getJSON(url, outerSignal = null) {
+  const controller = new AbortController();
+  const abort = () => controller.abort();
 
-  if(outerSignal?.aborted)controller.abort();
-  outerSignal?.addEventListener('abort',abort,{once:true});
+  if (outerSignal?.aborted) controller.abort();
+  outerSignal?.addEventListener('abort', abort, { once: true });
 
-  const timer=setTimeout(abort,15000);
+  const timer = setTimeout(abort, 15000);
 
-  try{
-    const response=await fetch(url,{
-      signal:controller.signal,
-      cache:'no-store',
-      credentials:'omit',
-      referrerPolicy:'no-referrer'
+  try {
+    const response = await fetch(url, {
+      signal: controller.signal,
+      cache: 'no-store',
+      credentials: 'omit',
+      referrerPolicy: 'no-referrer'
     });
 
-    if(response.status===429||response.status===418){
-      const h=response.headers.get('Retry-After');
-      const seconds=h===null?NaN:Number(h);
-      const delay=finite(seconds)?seconds*1000:
-        Math.max(0,(Date.parse(h)||0)-Date.now());
+    if (response.status === 429 || response.status === 418) {
+      const header = response.headers.get('Retry-After');
+      const seconds = header === null ? NaN : Number(header);
+      const delay = finite(seconds)
+        ? seconds * 1000
+        : Math.max(0, (Date.parse(header) || 0) - Date.now());
 
-      if(url.startsWith(REST))
-        blockedUntil=Date.now()+Math.max(60000,delay);
+      if (url.startsWith(REST)) {
+        blockedUntil = Date.now() + Math.max(60000, delay);
+      }
 
       throw new Error('요청 제한이 발생했습니다. 잠시 뒤 다시 조회하세요.');
     }
 
-    if(!response.ok)
-      throw new Error('HTTP '+response.status+' · 지역·네트워크 제한 확인');
+    if (!response.ok) {
+      throw new Error('HTTP ' + response.status + ' · 지역·네트워크 제한 확인');
+    }
 
-    const data=await response.json();
+    const data = await response.json();
 
-    if(data&&typeof data.code==='number'&&data.code<0)
-      throw new Error(data.msg||'거래소 응답 오류');
+    if (data && typeof data.code === 'number' && data.code < 0) {
+      throw new Error(data.msg || '거래소 응답 오류');
+    }
 
     return data;
-  }catch(e){
-    if(e.name==='AbortError')
-      throw new Error(outerSignal?.aborted?'사용자가 분석을 중지했습니다.':'조회 시간 초과');
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      throw new Error(
+        outerSignal?.aborted
+          ? '사용자가 분석을 중지했습니다.'
+          : '조회 시간 초과'
+      );
+    }
 
-    if(e instanceof TypeError)
+    if (error instanceof TypeError) {
       throw new Error('연결 실패 · API 지역 제한 또는 CORS 확인');
+    }
 
-    throw e;
-  }finally{
+    throw error;
+  } finally {
     clearTimeout(timer);
-    outerSignal?.removeEventListener('abort',abort);
+    outerSignal?.removeEventListener('abort', abort);
   }
 }
 
-function checkRun(){
-  if(owner?.signal.aborted)
+function checkRun() {
+  if (owner?.signal.aborted) {
     throw new Error('사용자가 분석을 중지했습니다.');
+  }
 
-  if(Date.now()<blockedUntil)
+  if (Date.now() < blockedUntil) {
     throw new Error('거래소 요청 제한 대기 중입니다.');
+  }
 }
 
-async function api(path){
+async function api(path) {
   checkRun();
-  return getJSON(REST+path,owner?.signal);
+  return getJSON(REST + path, owner?.signal);
 }
 
-$('fetchFx').onclick=async()=>{
-  $('fetchFx').disabled=true;
+$('fetchFx').onclick = async () => {
+  $('fetchFx').disabled = true;
+  const revisionAtStart = fxRevision;
 
-  try{
-    const data=await getJSON(
-      'https://api.coingecko.com/api/v3/simple/price'+
+  try {
+    const data = await getJSON(
+      'https://api.coingecko.com/api/v3/simple/price' +
       '?ids=tether&vs_currencies=krw&include_last_updated_at=true'
     );
 
-    const x=data.tether?.krw;
-    const t=data.tether?.last_updated_at*1000;
+    const x = data.tether?.krw;
+    const time = data.tether?.last_updated_at * 1000;
 
-    if(!finite(x)||x<=0||!finite(t)||
-      Date.now()-t>15*60000||t>Date.now()+60000)
+    if (
+      !finite(x) || x <= 0 || !finite(time) ||
+      Date.now() - time > 15 * 60000 ||
+      time > Date.now() + 60000
+    ) {
       throw new Error('최신 환산 가격을 확인하지 못했습니다. 직접 입력하세요.');
+    }
 
-    $('fx').value=x;
+    // 조회 도중 직접 수정한 입력을 덮어쓰지 않습니다.
+    if (revisionAtStart !== fxRevision) {
+      set('fxStatus',
+        '조회 중 직접 수정한 환산 기준을 유지했습니다.' +
+        '\n조회된 참고 가격: 1 USDT = ' + won(x) +
+        '\n자료 시각: ' + stamp(time)
+      );
+      return;
+    }
+
+    $('fx').value = String(x);
+    fxRevision++;
+
     set('fxStatus',
-      'CoinGecko Tether 참고 가격'+
-      '\n1 USDT = '+fmt(x)+' 원'+
-      '\n자료 시각 '+stamp(t)
+      'CoinGecko Tether 참고 가격' +
+      '\n1 USDT = ' + won(x) +
+      '\n자료 시각: ' + stamp(time)
     );
 
-    calcFutures();
-    calcSpot();
-  }catch(e){
+    refreshFxDependentViews();
+  } catch (error) {
     set('fxStatus',
-      '자동 조회 실패: '+e.message+
+      '자동 조회 실패: ' + error.message +
       '\n기존 입력값은 유지합니다. 직접 입력할 수 있습니다.'
     );
-  }finally{
-    $('fetchFx').disabled=false;
+  } finally {
+    $('fetchFx').disabled = false;
   }
 };
 
 /* ===================================================
-   완료 봉 검증
+   완료 봉 조회 및 검증
 =================================================== */
 
-async function getBars(symbol,interval,width){
-  const raw=await api(
-    '/fapi/v1/klines?symbol='+encodeURIComponent(symbol)+
-    '&interval='+interval+'&limit=260&endTime='+
-    Math.floor(marketNow-2000)
+async function getBars(symbol, interval, width) {
+  const raw = await api(
+    '/fapi/v1/klines?symbol=' + encodeURIComponent(symbol) +
+    '&interval=' + interval +
+    '&limit=260&endTime=' + Math.floor(marketNow - 2000)
   );
 
-  if(!Array.isArray(raw))throw new Error('차트 형식 오류');
+  if (!Array.isArray(raw)) throw new Error('차트 형식 오류');
 
-  const rows=raw.map(r=>({
-    time:+r[0],open:+r[1],high:+r[2],
-    low:+r[3],close:+r[4],volume:+r[5],
-    end:+r[6],quote:+r[7]
-  })).filter(r=>r.end<marketNow-2000);
+  const rows = raw.map(r => ({
+    time: +r[0],
+    open: +r[1],
+    high: +r[2],
+    low: +r[3],
+    close: +r[4],
+    volume: +r[5],
+    end: +r[6],
+    quote: +r[7]
+  })).filter(r => r.end < marketNow - 2000);
 
-  if(rows.length<210)
+  if (rows.length < 210) {
     throw new Error('완료 봉 210개 미만 · 장기 지표 자료 부족');
-
-  for(let i=0;i<rows.length;i++){
-    const r=rows[i];
-
-    if(!Object.values(r).every(finite)||
-      Math.min(r.open,r.high,r.low,r.close)<=0||
-      r.high<Math.max(r.open,r.close)||
-      r.low>Math.min(r.open,r.close)||
-      r.volume<0||r.quote<0||
-      r.end-r.time!==width-1||
-      (i>0&&r.time-rows[i-1].time!==width))
-      throw new Error('캔들 값 또는 연속성 검증 실패');
   }
 
-  const expected=Math.floor((marketNow-2000)/width)*width-1;
+  for (let i = 0; i < rows.length; i++) {
+    const r = rows[i];
 
-  if(rows.at(-1).end!==expected)
+    if (
+      !Object.values(r).every(finite) ||
+      Math.min(r.open, r.high, r.low, r.close) <= 0 ||
+      r.high < Math.max(r.open, r.close) ||
+      r.low > Math.min(r.open, r.close) ||
+      r.volume < 0 || r.quote < 0 ||
+      r.end - r.time !== width - 1 ||
+      (i > 0 && r.time - rows[i - 1].time !== width)
+    ) {
+      throw new Error('캔들 값 또는 연속성 검증 실패');
+    }
+  }
+
+  const expected = Math.floor((marketNow - 2000) / width) * width - 1;
+
+  if (rows.at(-1).end !== expected) {
     throw new Error('최신 완료 봉 확인 실패');
+  }
 
   return rows;
 }
 
 /* ===================================================
-   지표 계산
+   기술적 지표
 =================================================== */
 
-function emaSeries(values,n){
-  const out=Array(values.length).fill(null);
-  if(values.length<n)return out;
+function emaSeries(values, n) {
+  const out = Array(values.length).fill(null);
+  if (values.length < n) return out;
 
-  let e=mean(values.slice(0,n));
-  out[n-1]=e;
-  const k=2/(n+1);
+  let value = mean(values.slice(0, n));
+  out[n - 1] = value;
+  const k = 2 / (n + 1);
 
-  for(let i=n;i<values.length;i++){
-    e=values[i]*k+e*(1-k);
-    out[i]=e;
+  for (let i = n; i < values.length; i++) {
+    value = values[i] * k + value * (1 - k);
+    out[i] = value;
   }
+
   return out;
 }
 
-function wilder(values,n){
-  if(values.length<n)return [];
-  const out=[];
-  let x=mean(values.slice(0,n));
-  out.push(x);
+function wilder(values, n) {
+  if (values.length < n) return [];
 
-  for(let i=n;i<values.length;i++){
-    x=(x*(n-1)+values[i])/n;
-    out.push(x);
+  const out = [];
+  let value = mean(values.slice(0, n));
+  out.push(value);
+
+  for (let i = n; i < values.length; i++) {
+    value = (value * (n - 1) + values[i]) / n;
+    out.push(value);
   }
+
   return out;
 }
 
-function rsi(values,n=14){
-  const gain=[],loss=[];
+function rsi(values, n = 14) {
+  const gain = [];
+  const loss = [];
 
-  for(let i=1;i<values.length;i++){
-    const d=values[i]-values[i-1];
-    gain.push(Math.max(d,0));
-    loss.push(Math.max(-d,0));
+  for (let i = 1; i < values.length; i++) {
+    const change = values[i] - values[i - 1];
+    gain.push(Math.max(change, 0));
+    loss.push(Math.max(-change, 0));
   }
 
-  const g=wilder(gain,n).at(-1);
-  const l=wilder(loss,n).at(-1);
+  const g = wilder(gain, n).at(-1);
+  const l = wilder(loss, n).at(-1);
 
-  return g===0&&l===0?50:l===0?100:100-100/(1+g/l);
+  return g === 0 && l === 0 ? 50
+    : l === 0 ? 100
+    : 100 - 100 / (1 + g / l);
 }
 
-function adxAndAtr(rows,n=14){
-  const tr=[],plus=[],minus=[];
+function adxAndAtr(rows, n = 14) {
+  const tr = [];
+  const plus = [];
+  const minus = [];
 
-  for(let i=1;i<rows.length;i++){
-    const a=rows[i],p=rows[i-1];
-    const up=a.high-p.high;
-    const down=p.low-a.low;
+  for (let i = 1; i < rows.length; i++) {
+    const a = rows[i];
+    const previous = rows[i - 1];
+    const up = a.high - previous.high;
+    const down = previous.low - a.low;
 
     tr.push(Math.max(
-      a.high-a.low,
-      Math.abs(a.high-p.close),
-      Math.abs(a.low-p.close)
+      a.high - a.low,
+      Math.abs(a.high - previous.close),
+      Math.abs(a.low - previous.close)
     ));
 
-    plus.push(up>down&&up>0?up:0);
-    minus.push(down>up&&down>0?down:0);
+    plus.push(up > down && up > 0 ? up : 0);
+    minus.push(down > up && down > 0 ? down : 0);
   }
 
-  const ts=wilder(tr,n);
-  const ps=wilder(plus,n);
-  const ms=wilder(minus,n);
+  const ts = wilder(tr, n);
+  const ps = wilder(plus, n);
+  const ms = wilder(minus, n);
+  const pdi = [];
+  const mdi = [];
+  const dx = [];
 
-  const pdi=[],mdi=[],dx=[];
-
-  for(let i=0;i<ts.length;i++){
-    const p=ts[i]>0?100*ps[i]/ts[i]:0;
-    const m=ts[i]>0?100*ms[i]/ts[i]:0;
+  for (let i = 0; i < ts.length; i++) {
+    const p = ts[i] > 0 ? 100 * ps[i] / ts[i] : 0;
+    const m = ts[i] > 0 ? 100 * ms[i] / ts[i] : 0;
 
     pdi.push(p);
     mdi.push(m);
-    dx.push(p+m>0?100*Math.abs(p-m)/(p+m):0);
+    dx.push(p + m > 0 ? 100 * Math.abs(p - m) / (p + m) : 0);
   }
 
   return {
-    atr:ts.at(-1),
-    adx:wilder(dx,n).at(-1),
-    plusDI:pdi.at(-1),
-    minusDI:mdi.at(-1)
+    atr: ts.at(-1),
+    adx: wilder(dx, n).at(-1),
+    plusDI: pdi.at(-1),
+    minusDI: mdi.at(-1)
   };
 }
 
-function stochAt(rows,end){
-  const a=rows.slice(end-13,end+1);
-  const high=Math.max(...a.map(x=>x.high));
-  const low=Math.min(...a.map(x=>x.low));
-  return high===low?50:100*(rows[end].close-low)/(high-low);
+function stochAt(rows, end) {
+  const sample = rows.slice(end - 13, end + 1);
+  const high = Math.max(...sample.map(x => x.high));
+  const low = Math.min(...sample.map(x => x.low));
+
+  return high === low
+    ? 50
+    : 100 * (rows[end].close - low) / (high - low);
 }
 
-function indicators(rows){
-  const closes=rows.map(x=>x.close);
-  const last=rows.at(-1);
-  const e20=emaSeries(closes,20);
-  const e50=emaSeries(closes,50);
-  const e200=emaSeries(closes,200);
-  const e12=emaSeries(closes,12);
-  const e26=emaSeries(closes,26);
+function indicators(rows) {
+  const closes = rows.map(x => x.close);
+  const last = rows.at(-1);
+  const e20 = emaSeries(closes, 20);
+  const e50 = emaSeries(closes, 50);
+  const e200 = emaSeries(closes, 200);
+  const e12 = emaSeries(closes, 12);
+  const e26 = emaSeries(closes, 26);
 
-  const macd=[];
-  for(let i=25;i<closes.length;i++)
-    macd.push(e12[i]-e26[i]);
+  const macd = [];
+  for (let i = 25; i < closes.length; i++) {
+    macd.push(e12[i] - e26[i]);
+  }
 
-  const signal=emaSeries(macd,9);
-  const hist=macd.at(-1)-signal.at(-1);
-  const prevHist=macd.at(-2)-signal.at(-2);
+  const signal = emaSeries(macd, 9);
+  const hist = macd.at(-1) - signal.at(-1);
+  const prevHist = macd.at(-2) - signal.at(-2);
 
-  const last20=rows.slice(-20);
-  const c20=closes.slice(-20);
-  const mid=mean(c20);
-  const std=Math.sqrt(mean(c20.map(x=>(x-mid)**2)));
-  const upper=mid+2*std;
-  const lower=mid-2*std;
+  const last20 = rows.slice(-20);
+  const c20 = closes.slice(-20);
+  const mid = mean(c20);
+  const std = Math.sqrt(mean(c20.map(x => (x - mid) ** 2)));
+  const upper = mid + 2 * std;
+  const lower = mid - 2 * std;
 
-  const avgVol=mean(rows.slice(-21,-1).map(x=>x.volume));
-  const totalVol=sum(last20.map(x=>x.volume));
+  const avgVol = mean(rows.slice(-21, -1).map(x => x.volume));
+  const totalVol = sum(last20.map(x => x.volume));
 
-  const cmf=totalVol>0?
-    sum(last20.map(x=>
-      (x.high===x.low?0:
-        (2*x.close-x.high-x.low)/(x.high-x.low))*x.volume
-    ))/totalVol:null;
+  const cmf = totalVol > 0
+    ? sum(last20.map(x => (
+        x.high === x.low ? 0
+          : (2 * x.close - x.high - x.low) / (x.high - x.low)
+      ) * x.volume)) / totalVol
+    : null;
 
-  let obv=0;
-  for(let i=rows.length-20;i<rows.length;i++)
-    obv+=Math.sign(rows[i].close-rows[i-1].close)*rows[i].volume;
+  let obv = 0;
+  for (let i = rows.length - 20; i < rows.length; i++) {
+    obv += Math.sign(rows[i].close - rows[i - 1].close) * rows[i].volume;
+  }
 
-  const k=stochAt(rows,rows.length-1);
-  const kd=[
-    k,stochAt(rows,rows.length-2),stochAt(rows,rows.length-3)
-  ];
+  const k = stochAt(rows, rows.length - 1);
+  const stochasticD = mean([
+    k,
+    stochAt(rows, rows.length - 2),
+    stochAt(rows, rows.length - 3)
+  ]);
 
-  const ad=adxAndAtr(rows);
+  const ad = adxAndAtr(rows);
 
-  let trend=0;
-  if(last.close>e20.at(-1)&&e20.at(-1)>e50.at(-1)&&
-    e20.at(-1)>e20.at(-2))trend=1;
+  let trend = 0;
 
-  if(last.close<e20.at(-1)&&e20.at(-1)<e50.at(-1)&&
-    e20.at(-1)<e20.at(-2))trend=-1;
+  if (
+    last.close > e20.at(-1) &&
+    e20.at(-1) > e50.at(-1) &&
+    e20.at(-1) > e20.at(-2)
+  ) trend = 1;
 
-  const range=last.high-last.low;
+  if (
+    last.close < e20.at(-1) &&
+    e20.at(-1) < e50.at(-1) &&
+    e20.at(-1) < e20.at(-2)
+  ) trend = -1;
+
+  const range = last.high - last.low;
 
   return {
-    close:last.close,
-    end:last.end,
-    ema20:e20.at(-1),
-    ema50:e50.at(-1),
-    ema200:e200.at(-1),
-    emaSlope:e20.at(-1)-e20.at(-2),
+    close: last.close,
+    end: last.end,
+    ema20: e20.at(-1),
+    ema50: e50.at(-1),
+    ema200: e200.at(-1),
+    emaSlope: e20.at(-1) - e20.at(-2),
     trend,
-    rsi:rsi(closes),
-    macd:macd.at(-1),
-    macdSignal:signal.at(-1),
-    hist,prevHist,
+    rsi: rsi(closes),
+    macd: macd.at(-1),
+    macdSignal: signal.at(-1),
+    hist,
+    prevHist,
     ...ad,
-    atrPct:ad.atr/last.close*100,
-    bbMid:mid,bbUpper:upper,bbLower:lower,
-    bbWidth:mid>0?(upper-lower)/mid*100:0,
-    bbPosition:upper>lower?(last.close-lower)/(upper-lower):.5,
-    stochK:k,stochD:mean(kd),
-    volumeRatio:avgVol>0?last.volume/avgVol:null,
-    cmf,obv,
-    high20:Math.max(...last20.map(x=>x.high)),
-    low20:Math.min(...last20.map(x=>x.low)),
-    body:range>0?Math.abs(last.close-last.open)/range:0,
-    candleSide:Math.sign(last.close-last.open),
-    upperWick:range>0?(last.high-Math.max(last.open,last.close))/range:0,
-    lowerWick:range>0?(Math.min(last.open,last.close)-last.low)/range:0
+    atrPct: ad.atr / last.close * 100,
+    bbMid: mid,
+    bbUpper: upper,
+    bbLower: lower,
+    bbWidth: mid > 0 ? (upper - lower) / mid * 100 : 0,
+    bbPosition: upper > lower ? (last.close - lower) / (upper - lower) : 0.5,
+    stochK: k,
+    stochD: stochasticD,
+    volumeRatio: avgVol > 0 ? last.volume / avgVol : null,
+    cmf,
+    obv,
+    high20: Math.max(...last20.map(x => x.high)),
+    low20: Math.min(...last20.map(x => x.low)),
+    body: range > 0 ? Math.abs(last.close - last.open) / range : 0,
+    candleSide: Math.sign(last.close - last.open),
+    upperWick: range > 0
+      ? (last.high - Math.max(last.open, last.close)) / range : 0,
+    lowerWick: range > 0
+      ? (Math.min(last.open, last.close) - last.low) / range : 0
   };
 }
 
-const trendText=t=>t===1?'상승 우세':t===-1?'하락 우세':'혼조';
-
-function classify(meta){
-  const tags=[
+function classify(meta) {
+  const tags = [
     meta.underlyingType,
-    ...(Array.isArray(meta.underlyingSubType)?meta.underlyingSubType:[])
+    ...(Array.isArray(meta.underlyingSubType)
+      ? meta.underlyingSubType : [])
   ].filter(Boolean).join(' ').toUpperCase();
 
-  // 심볼 이름만 보고 주식·금·외환이라고 추정하지 않습니다.
-  if(/TRADFI|EQUITY|EQUITIES|STOCK|FOREX|COMMODIT|PRECIOUS_METAL/.test(tags))
+  if (/TRADFI|EQUITY|EQUITIES|STOCK|FOREX|COMMODIT|PRECIOUS_METAL/.test(tags)) {
     return 'TradFi';
+  }
 
-  if(MAJORS.includes(meta.symbol))return '메이저';
+  if (MAJORS.includes(meta.symbol)) return '메이저';
+  if (NON_COIN.has(meta.symbol)) return '지수·기타';
 
-  if(NON_COIN.has(meta.symbol))return '지수·기타';
-
-  return meta.underlyingType==='COIN'?'알트':'분류 미확인';
+  return meta.underlyingType === 'COIN' ? '알트' : '분류 미확인';
 }
 
 /* ===================================================
-   상대 점수: 확률 아님
+   후보 상대 점수
 =================================================== */
 
-function scoreSide(d,h,side){
-  let score=0;
-  const reasons=[];
-  const warnings=[];
+function scoreSide(d, h, side) {
+  let score = 0;
+  const reasons = [];
+  const warnings = [];
 
-  function award(ok,points,label){
-    if(ok){
-      score+=points;
+  function award(condition, points, label) {
+    if (condition) {
+      score += points;
       reasons.push(label);
     }
   }
 
-  award(d.trend===side,16,'일봉 추세 일치');
-  award(h.trend===side,18,'4시간봉 추세 일치');
-  award(side*(d.close-d.ema200)>0,7,'일봉 EMA200 방향 일치');
+  award(d.trend === side, 16, '일봉 추세 일치');
+  award(h.trend === side, 18, '4시간봉 추세 일치');
+  award(side * (d.close - d.ema200) > 0, 7, '일봉 EMA200 방향 일치');
+  award(side * h.hist > 0, 9, 'MACD 히스토그램 방향 일치');
+  award(side * (h.hist - h.prevHist) > 0, 5, 'MACD 모멘텀 개선');
 
-  award(side*h.hist>0,9,'MACD 히스토그램 방향 일치');
-  award(side*(h.hist-h.prevHist)>0,5,'MACD 모멘텀 개선');
+  const rsiFit = side === 1
+    ? h.rsi >= 45 && h.rsi <= 68
+    : h.rsi >= 32 && h.rsi <= 55;
 
-  const rsiFit=side===1?
-    h.rsi>=45&&h.rsi<=68:
-    h.rsi>=32&&h.rsi<=55;
-
-  award(rsiFit,8,'RSI 선호 범위');
+  award(rsiFit, 8, 'RSI 선호 범위');
+  award(h.adx >= 20 && side * (h.plusDI - h.minusDI) > 0, 8, 'ADX·DI 방향 확인');
 
   award(
-    h.adx>=20&&side*(h.plusDI-h.minusDI)>0,
-    8,'ADX·DI 방향 확인'
+    side * (h.stochK - h.stochD) > 0 &&
+    (side === 1 ? h.stochK < 90 : h.stochK > 10),
+    5, 'Stochastic 방향 일치'
   );
 
   award(
-    side*(h.stochK-h.stochD)>0&&
-    (side===1?h.stochK<90:h.stochK>10),
-    5,'Stochastic 방향 일치'
+    side * (h.close - h.bbMid) > 0 &&
+    h.bbPosition >= 0 && h.bbPosition <= 1,
+    5, '볼린저 중심선 방향 일치'
   );
 
   award(
-    side*(h.close-h.bbMid)>0&&
-    h.bbPosition>=0&&h.bbPosition<=1,
-    5,'볼린저 중심선 방향 일치'
+    h.volumeRatio !== null &&
+    h.volumeRatio >= 1 &&
+    h.candleSide === side,
+    5, '방향 일치 봉의 거래량 증가'
   );
 
-  award(
-    h.volumeRatio!==null&&h.volumeRatio>=1&&h.candleSide===side,
-    5,'방향 일치 봉의 거래량 증가'
-  );
+  award(h.cmf !== null && side * h.cmf > 0.05, 5, 'CMF 방향 일치');
+  award(side * h.obv > 0, 4, '최근 OBV 방향 일치');
+  award(h.candleSide === side && h.body >= 0.5, 5, '완료 봉 몸통 방향 일치');
 
-  award(h.cmf!==null&&side*h.cmf>.05,5,'CMF 방향 일치');
-  award(side*h.obv>0,4,'최근 OBV 방향 일치');
+  if (h.adx < 18) warnings.push('ADX가 낮아 추세 근거가 약합니다.');
 
-  award(
-    h.candleSide===side&&h.body>=.5,
-    5,'최근 완료 봉 몸통 방향 일치'
-  );
-
-  if(h.adx<18)warnings.push('ADX가 낮아 추세 신뢰가 약함');
-
-  if(side===1&&h.rsi>70||side===-1&&h.rsi<30){
-    score-=8;
-    warnings.push('RSI 과열 구간 · 추격 위험');
+  if (
+    (side === 1 && h.rsi > 70) ||
+    (side === -1 && h.rsi < 30)
+  ) {
+    score -= 8;
+    warnings.push('RSI 과열 구간으로 추격 진입 위험이 있습니다.');
   }
 
-  if(Math.abs(h.close-h.ema20)>2*h.atr){
-    score-=7;
-    warnings.push('EMA20에서 2 ATR 초과 이격');
+  if (Math.abs(h.close - h.ema20) > 2 * h.atr) {
+    score -= 7;
+    warnings.push('EMA20에서 2 ATR 이상 이격되어 되돌림 위험이 있습니다.');
   }
 
-  if(h.atrPct>5){
-    score-=5;
-    warnings.push('4시간 ATR 변동성이 큼');
+  if (h.atrPct > 5) {
+    score -= 5;
+    warnings.push('4시간 ATR 변동성이 큽니다.');
   }
 
-  if(h.volumeRatio===null||h.volumeRatio<.7)
-    warnings.push('직전 완료 봉 거래량이 약하거나 비교 불가');
+  if (h.volumeRatio === null || h.volumeRatio < 0.7) {
+    warnings.push('최근 완료 봉 거래량이 약하거나 비교할 수 없습니다.');
+  }
 
-  if(side===1&&h.upperWick>.5||side===-1&&h.lowerWick>.5)
-    warnings.push('방향 반대쪽 긴 꼬리 주의');
+  if (
+    (side === 1 && h.upperWick > 0.5) ||
+    (side === -1 && h.lowerWick > 0.5)
+  ) {
+    warnings.push('선택 방향에 불리한 긴 꼬리가 나타났습니다.');
+  }
 
-  if(d.trend!==side||h.trend!==side)
-    warnings.push('일봉·4시간봉 방향이 모두 일치하지 않음');
+  if (d.trend !== side || h.trend !== side) {
+    warnings.push('일봉·4시간봉 추세가 선택 방향으로 모두 일치하지 않습니다.');
+  }
 
   return {
     side,
-    score:clamp(score,0,100),
+    score: clamp(score, 0, 100),
     reasons,
     warnings
   };
 }
 
-function evaluate(meta,daily,h4,ticker){
-  const d=indicators(daily);
-  const h=indicators(h4);
+function evaluate(meta, daily, h4, ticker) {
+  const d = indicators(daily);
+  const h = indicators(h4);
 
-  if(![
-    d.ema200,d.rsi,h.atr,h.adx,h.rsi,h.hist,h.stochK
-  ].every(finite)||h.atr<=0)
+  if (![
+    d.ema200, d.rsi, h.atr, h.adx,
+    h.rsi, h.hist, h.stochK
+  ].every(finite) || h.atr <= 0) {
     throw new Error('유효한 지표 계산 불가');
+  }
 
-  const long=scoreSide(d,h,1);
-  const short=scoreSide(d,h,-1);
-  const best=long.score>=short.score?long:short;
+  const long = scoreSide(d, h, 1);
+  const short = scoreSide(d, h, -1);
+  const best = long.score >= short.score ? long : short;
 
   return {
-    symbol:meta.symbol,
-    category:classify(meta),
-    meta,d,h,daily,h4,ticker,
+    symbol: meta.symbol,
+    category: classify(meta),
+    d, h, daily, h4, ticker,
     ...best,
-    tied:long.score===short.score
+    longScore: long.score,
+    shortScore: short.score,
+    tied: long.score === short.score
   };
+}
+
+/* ===================================================
+   지표를 사람이 읽을 수 있는 문장으로 해석
+=================================================== */
+
+function interpretTechnical(item) {
+  const d = item.d;
+  const h = item.h;
+  const lines = [];
+
+  lines.push('① 큰 흐름과 단기 흐름');
+
+  if (d.trend === 1 && h.trend === 1) {
+    lines.push(
+      '일봉과 4시간봉 모두 종가가 EMA20 위에 있고, EMA20이 EMA50 위에서 상승하고 있습니다. ' +
+      '큰 흐름과 단기 흐름이 함께 위를 향하므로 상승 지속을 우선 검토할 수 있는 구조입니다.'
+    );
+  } else if (d.trend === -1 && h.trend === -1) {
+    lines.push(
+      '일봉과 4시간봉 모두 종가가 EMA20 아래에 있고, EMA20이 EMA50 아래에서 하락하고 있습니다. ' +
+      '큰 흐름과 단기 흐름이 함께 약해 추가 하락 위험을 먼저 살펴야 하는 구조입니다.'
+    );
+  } else if (d.trend === -1 && h.trend === 1) {
+    lines.push(
+      '일봉은 하락 흐름이지만 4시간봉은 상승 흐름입니다. ' +
+      '단기 반등은 나타났으나 큰 추세가 상승으로 바뀌었다고 보기는 이릅니다. ' +
+      '반등 후 다시 밀리는 상황을 주의해야 합니다.'
+    );
+  } else if (d.trend === 1 && h.trend === -1) {
+    lines.push(
+      '일봉은 상승 흐름이지만 4시간봉은 하락 흐름입니다. ' +
+      '큰 상승 추세 안의 조정일 수 있지만, 조정이 끝났다는 근거는 아직 부족합니다.'
+    );
+  } else {
+    lines.push(
+      '일봉 또는 4시간봉의 이동평균 배열이 뚜렷하지 않습니다. ' +
+      '상승·하락 신호가 섞인 상태이므로 한쪽 방향을 강하게 단정하기 어렵습니다.'
+    );
+  }
+
+  lines.push(
+    '일봉 종가는 EMA200 ' + price(d.ema200) + ' USDT ' +
+    (d.close > d.ema200 ? '위' : d.close < d.ema200 ? '아래' : '부근') +
+    '에 있습니다. 장기 추세 참고 기준이며 확정 지지·저항은 아닙니다.'
+  );
+
+  lines.push('', '② 추세의 힘 · ADX와 DI');
+
+  const diText = h.plusDI > h.minusDI
+    ? '+DI가 -DI보다 높아 상승 방향 움직임이 상대적으로 우세합니다.'
+    : h.plusDI < h.minusDI
+      ? '-DI가 +DI보다 높아 하락 방향 움직임이 상대적으로 우세합니다.'
+      : '+DI와 -DI가 같아 방향 우위가 없습니다.';
+
+  lines.push(
+    'ADX는 ' + fmt(h.adx, 1) + '입니다. ' +
+    (h.adx < 18
+      ? '추세 강도가 낮아 횡보와 잦은 방향 전환을 경계해야 합니다. '
+      : h.adx < 25
+        ? '일부 추세는 있으나 강한 추세로 보기에는 신중해야 합니다. '
+        : '추세 강도가 비교적 뚜렷합니다. 다만 높은 ADX 자체가 상승을 뜻하지는 않습니다. ') +
+    diText
+  );
+
+  lines.push('', '③ 매수·매도 모멘텀 · RSI와 MACD');
+
+  let rsiText;
+  if (h.rsi >= 70) {
+    rsiText = '최근 상승 움직임이 강한 과매수 구간입니다. 상승이 더 이어질 수 있지만 추격 매수 뒤 조정 위험도 커집니다.';
+  } else if (h.rsi <= 30) {
+    rsiText = '최근 하락 움직임이 강한 과매도 구간입니다. 추가 하락이 가능하며, 동시에 숏 추격 뒤 급반등도 주의해야 합니다.';
+  } else if (h.rsi >= 55) {
+    rsiText = '최근 가격 움직임은 매수 쪽 모멘텀이 상대적으로 우세합니다.';
+  } else if (h.rsi <= 45) {
+    rsiText = '최근 가격 움직임은 매도 쪽 모멘텀이 상대적으로 우세합니다.';
+  } else {
+    rsiText = '중립 구간으로 매수·매도 어느 쪽도 강하게 우세하지 않습니다.';
+  }
+
+  lines.push('RSI14는 ' + fmt(h.rsi, 1) + '로, ' + rsiText);
+
+  let macdText;
+  if (h.hist > 0 && h.hist > h.prevHist) {
+    macdText = 'MACD가 시그널선 위에 있고 히스토그램도 커져 상승 모멘텀이 직전 봉보다 강화되었습니다.';
+  } else if (h.hist > 0) {
+    macdText = 'MACD는 시그널선 위에 있지만 히스토그램이 확대되지 않아 상승 모멘텀의 추가 강화는 확인되지 않았습니다.';
+  } else if (h.hist < 0 && h.hist < h.prevHist) {
+    macdText = 'MACD가 시그널선 아래에 있고 음의 히스토그램이 더 커져 하락 모멘텀이 강화되었습니다.';
+  } else if (h.hist < 0) {
+    macdText = 'MACD는 시그널선 아래에 있지만 음의 히스토그램이 확대되지 않아 하락 압력이 완화되는지 관찰할 구간입니다.';
+  } else {
+    macdText = 'MACD와 시그널선이 같아 모멘텀 방향이 중립입니다.';
+  }
+
+  lines.push(macdText);
+
+  lines.push(
+    'Stochastic K/D는 ' + fmt(h.stochK, 1) + '/' + fmt(h.stochD, 1) +
+    '입니다. K가 D보다 ' +
+    (h.stochK > h.stochD ? '높아 단기 반등·상승 쪽'
+      : h.stochK < h.stochD ? '낮아 단기 조정·하락 쪽' : '같아 중립') +
+    ' 보조 신호로 해석합니다. 현재 위치 비교일 뿐, 새 교차 발생을 뜻하지는 않습니다.'
+  );
+
+  lines.push('', '④ 거래량이 가격 움직임을 뒷받침하는가');
+
+  if (h.volumeRatio === null) {
+    lines.push('비교할 거래량이 부족해 거래량 확인을 보류합니다.');
+  } else {
+    const candle = h.candleSide > 0 ? '상승 봉'
+      : h.candleSide < 0 ? '하락 봉' : '시가와 종가가 같은 봉';
+
+    lines.push(
+      '최근 완료 4시간봉은 ' + candle +
+      '이며 거래량은 직전 20봉 평균의 ' + fmt(h.volumeRatio, 2) + '배입니다. ' +
+      (h.volumeRatio >= 1.2
+        ? '평균보다 거래가 활발해 해당 가격 움직임에 참여가 늘어난 것으로 볼 수 있습니다.'
+        : h.volumeRatio < 0.7
+          ? '참여가 약해 현재 움직임이 이어질지 추가 확인이 필요합니다.'
+          : '평균에서 크게 벗어나지 않아 거래량만으로 강한 확신을 주기는 어렵습니다.')
+    );
+  }
+
+  lines.push(
+    'CMF20 ' + fmt(h.cmf, 3) + ', 최근 OBV 변화 ' + signed(h.obv, 2) + '. ' +
+    (h.cmf !== null && h.cmf > 0.05 && h.obv > 0
+      ? '두 거래량 지표가 매수 압력 우세 해석을 함께 뒷받침합니다.'
+      : h.cmf !== null && h.cmf < -0.05 && h.obv < 0
+        ? '두 거래량 지표가 매도 압력 우세 해석을 함께 뒷받침합니다.'
+        : '거래량 보조 지표는 중립이거나 서로 엇갈려 방향 확인력이 제한적입니다.') +
+    ' 실제 순자금 유입·유출을 직접 측정한 값은 아닙니다.'
+  );
+
+  lines.push('', '⑤ 변동성과 추격 위험');
+
+  lines.push(
+    '4시간 ATR14는 ' + price(h.atr) + ' USDT, 종가 대비 ' +
+    fmt(h.atrPct, 2) + '%입니다. 최근 변동폭의 척도이지 앞으로 반드시 움직일 폭은 아닙니다.'
+  );
+
+  lines.push(
+    h.bbPosition > 1
+      ? '종가가 볼린저 상단을 넘어섰습니다. 강한 상승일 수 있으나 과도한 추격과 밴드 안 복귀를 주의해야 합니다.'
+      : h.bbPosition < 0
+        ? '종가가 볼린저 하단 아래에 있습니다. 강한 하락일 수 있으나 급반등과 밴드 안 복귀를 주의해야 합니다.'
+        : h.close > h.bbMid
+          ? '종가가 볼린저 중심선 위에 있어 밴드 내부에서는 상대적으로 강한 위치입니다.'
+          : h.close < h.bbMid
+            ? '종가가 볼린저 중심선 아래에 있어 밴드 내부에서는 상대적으로 약한 위치입니다.'
+            : '종가가 볼린저 중심선 부근으로 밴드상 방향은 중립입니다.'
+  );
+
+  if (h.upperWick > 0.5) {
+    lines.push('최근 봉의 긴 윗꼬리는 봉 안에서 높은 가격이 유지되지 못했음을 보여줍니다. 상승 추격 시 주의가 필요합니다.');
+  }
+
+  if (h.lowerWick > 0.5) {
+    lines.push('최근 봉의 긴 아랫꼬리는 봉 안에서 낮은 가격이 유지되지 못했음을 보여줍니다. 하락 추격 시 주의가 필요합니다.');
+  }
+
+  return lines.join('\n');
+}
+
+function indicatorText(i) {
+  return [
+    'EMA20 ' + price(i.ema20) + ' / EMA50 ' + price(i.ema50),
+    'EMA200 ' + price(i.ema200),
+    'RSI14 ' + fmt(i.rsi, 1) + ' / ADX14 ' + fmt(i.adx, 1),
+    '+DI ' + fmt(i.plusDI, 1) + ' / -DI ' + fmt(i.minusDI, 1),
+    'MACD ' + price(i.macd) + ' / Signal ' + price(i.macdSignal),
+    'MACD histogram ' + price(i.hist),
+    'Stochastic K ' + fmt(i.stochK, 1) + ' / D ' + fmt(i.stochD, 1),
+    'ATR14 ' + price(i.atr) + ' / 종가 대비 ' + fmt(i.atrPct, 2) + '%',
+    'Bollinger ' + price(i.bbLower) + ' ~ ' + price(i.bbUpper),
+    'BB 폭 ' + fmt(i.bbWidth, 2) + '%',
+    '상대 거래량 ' + fmt(i.volumeRatio, 2) + '배',
+    'CMF20 ' + fmt(i.cmf, 3),
+    '최근 20봉 OBV 변화 ' + signed(i.obv, 2),
+    '가격 단위: USDT'
+  ].join('\n');
 }
 
 /* ===================================================
    추천 표시
 =================================================== */
 
-function defaultPick(message){
-  set('pickTitle','BTCUSDT · 관찰 추천');
-  set('pickBadge','진입 판단 보류');
+function defaultPick(message) {
+  set('pickTitle', 'BTCUSDT · 관찰 대상');
+  set('pickBadge', '진입 판단 보류');
   set('pickBody',
-    '비트코인을 우선 관찰 대상으로 표시합니다.'+
-    '\n'+message+
-    '\n검증된 시장 자료가 없어 매수·매도 방향이나 목표 가격을 만들지 않습니다.'
+    '비트코인을 기본 관찰 대상으로 표시합니다.' +
+    '\n' + message +
+    '\n검증된 시장 자료가 없어 방향과 목표 가격을 만들지 않습니다.'
   );
+  set('pickIndicators', '유효 자료 없음');
 }
 
-function indicatorText(i){
-  return [
-    'EMA20 '+price(i.ema20)+' / EMA50 '+price(i.ema50),
-    'EMA200 '+price(i.ema200),
-    'RSI14 '+fmt(i.rsi,1)+' / ADX14 '+fmt(i.adx,1),
-    '+DI '+fmt(i.plusDI,1)+' / -DI '+fmt(i.minusDI,1),
-    'MACD '+price(i.macd)+' / Signal '+price(i.macdSignal),
-    'Stochastic K '+fmt(i.stochK,1)+' / D '+fmt(i.stochD,1),
-    'ATR14 '+price(i.atr)+' / 가격 대비 '+fmt(i.atrPct,2)+'%',
-    'Bollinger '+price(i.bbLower)+' ~ '+price(i.bbUpper),
-    'BB 폭 '+fmt(i.bbWidth,2)+'%',
-    '상대 거래량 '+fmt(i.volumeRatio,2)+'배',
-    'CMF20 '+fmt(i.cmf,3)+' / 최근 OBV 변화 '+signed(i.obv,2)
-  ].join('\n');
-}
+function renderPick(item, mark, markError) {
+  const h = item.h;
+  const fresh = mark !== null;
+  const entry = fresh ? mark.price : h.close;
+  const distance = Math.abs(entry - h.close);
+  const spread = Math.abs(item.longScore - item.shortScore);
 
-function renderPick(item,mark,markError){
-  const direction=item.side===1?'LONG':'SHORT';
-  const h=item.h;
-  const fresh=mark!==null;
-  const entry=fresh?mark.price:h.close;
-  const distance=Math.abs(entry-h.close);
+  const strong =
+    !item.tied &&
+    item.score >= 65 &&
+    spread >= 15 &&
+    item.d.trend === item.side &&
+    h.trend === item.side &&
+    h.adx >= 18 &&
+    (item.side === 1 ? h.rsi < 70 : h.rsi > 30) &&
+    distance <= h.atr &&
+    fresh;
 
-  const strong=!item.tied&&item.score>=65&&
-    item.d.trend===item.side&&h.trend===item.side&&
-    h.adx>=18&&
-    (item.side===1?h.rsi<70:h.rsi>30)&&
-    distance<=h.atr&&fresh;
-
-  // 모형 참고선: 주문 단위·수수료·실제 지지저항을 보장하지 않음
-  const stop=entry-item.side*1.5*h.atr;
-  const target=entry+item.side*3*h.atr;
-  const validPlan=stop>0&&target>0;
-
-  const label=strong?'조건부 검토 추천':'관찰 추천';
+  const direction = item.tied ? '방향 혼조'
+    : item.side === 1 ? 'LONG 우세' : 'SHORT 우세';
 
   set('pickTitle',
-    item.symbol+' · '+(item.tied?'방향 혼조':direction)+' · '+label
+    item.symbol + ' · ' + direction + ' · ' +
+    (strong ? '조건부 검토 후보' : '관찰 후보')
   );
-  set('pickBadge',item.category+' · 규칙 점수 '+item.score+'/100');
 
-  const lines=[
-    '분석 기준 '+stamp(marketNow),
-    '일봉 '+trendText(item.d.trend)+' / 4시간봉 '+trendText(h.trend),
+  set('pickBadge', item.category + ' · 규칙 점수 ' + item.score + '/100');
+
+  const lines = [
+    '【선정 이유와 결론】',
+    '조회에 성공한 비교 표본 중 상대 점수가 가장 높은 후보입니다.',
+    '롱 점수 ' + item.longScore + ' / 숏 점수 ' + item.shortScore +
+    ' · 점수는 성공확률이 아닙니다.',
+    item.reasons.length
+      ? '주요 점수 근거: ' + item.reasons.join(', ')
+      : '방향성 근거가 부족하여 적극적인 진입 후보로 보기 어렵습니다.',
     '',
-    fresh?
-      '최근 조회 마크가격 '+price(entry)+' USDT · '+stamp(mark.time):
-      '완료 4시간봉 종가 '+price(entry)+' USDT · 현재가 미확인',
-    '원화 참고 환산 '+krw(entry),
+    strong
+      ? '큰 흐름과 단기 흐름이 같은 방향이고 모멘텀이 이를 일부 뒷받침합니다. 다만 즉시 진입 신호가 아니라 최신 가격·비용과 추세 유지 여부를 확인할 조건부 후보입니다.'
+      : '시간대별 추세 일치, 모멘텀, 과열 여부 또는 최신 가격 확인 조건이 충분하지 않아 신규 진입보다는 관찰을 우선합니다.',
     '',
-    '선정 근거',
-    ...(item.reasons.length?item.reasons.map(x=>'• '+x):
-      ['• 강한 방향성 근거가 부족한 표본 내 상대 후보']),
+    '【분석 시점과 기준 가격】',
+    '완료 봉 공통 기준: ' + stamp(marketNow),
+    fresh
+      ? '조회 마크가격: ' + price(entry) + ' USDT · ' + stamp(mark.time)
+      : '마지막 완료 4시간봉 종가: ' + price(entry) + ' USDT · 현재가 미확인',
+    '원화 참고: ' + krw(entry),
     '',
-    '주의할 조건',
-    ...(item.warnings.length?item.warnings.map(x=>'• '+x):
-      ['• 점수가 높아도 추세 반전·급변동 가능']),
+    '【분석 결과를 쉽게 설명하면】',
+    interpretTechnical(item),
+    '',
+    '【주의할 조건】',
+    ...(item.warnings.length
+      ? item.warnings.map(x => '• ' + x)
+      : ['• 조건이 좋아 보여도 급변동과 추세 반전이 발생할 수 있습니다.'])
   ];
 
-  if(item.tied)
-    lines.push('• 롱·숏 점수가 같아 방향을 확정하지 않음');
+  if (item.tied) lines.push('• 롱·숏 점수가 같아 방향을 선택하지 않습니다.');
+  if (!fresh) lines.push('• 최신 마크가격 조회 실패: ' + markError);
 
-  if(!fresh)lines.push('• 최신 마크가격 조회 실패: '+markError);
+  if (distance > h.atr) {
+    lines.push('• 마크가격이 분석 종가에서 1 ATR 이상 이동했습니다. 완료 봉 분석과 현재 가격 사이의 괴리가 큽니다.');
+  }
 
-  if(distance>h.atr)
-    lines.push('• 현재 마크가격이 마지막 분석 종가에서 1 ATR 이상 이동');
+  if (!item.tied) {
+    const stop = entry - item.side * 1.5 * h.atr;
+    const target = entry + item.side * 3 * h.atr;
 
-  if(validPlan&&!item.tied){
-    lines.push(
-      '',
-      'ATR 시나리오 참고선 · 실행 주문가 아님',
-      '기준 가격 '+price(entry),
-      '손절 방향 참고선 '+price(stop)+' · 1.5 ATR',
-      '목표 방향 참고선 '+price(target)+' · 3 ATR',
-      '가격 거리비 2:1 · 수수료·펀딩·슬리피지 차감 전',
-      '실제 지지·저항으로 확인된 가격이 아니라 변동성 투영값입니다.'
-    );
+    if (stop > 0 && target > 0) {
+      lines.push(
+        '',
+        '【변동성 기반 시나리오 참고선】',
+        '기준 가격: ' + price(entry) + ' USDT',
+        '반대 방향 1.5 ATR: ' + price(stop) + ' USDT',
+        '선택 방향 3 ATR: ' + price(target) + ' USDT',
+        '가격 거리비 2:1 · 수수료·펀딩·슬리피지 차감 전',
+        '실제 지지·저항으로 검증된 주문가가 아니며, 이 가격에 도달할 확률이나 시간을 계산한 것은 아닙니다.'
+      );
+    }
   }
 
   lines.push(
     '',
-    strong?
-      '실행 판단: 같은 방향의 추세 유지와 최신 호가·비용을 확인한 뒤 조건부 검토. 즉시 진입 신호는 아닙니다.':
-      '실행 판단: 조건이 약하거나 자료 확인이 부족하므로 신규 진입은 보류하고 관찰합니다.',
-    '',
-    '4시간봉 지표',
-    indicatorText(h),
-    '',
-    '규칙 점수는 확률이 아닙니다. 레버리지·투입 금액은 추천하지 않습니다.'
+    '분석은 정적 자료입니다. 다음 4시간봉 마감 또는 급격한 가격 변화 뒤에는 다시 분석하세요.'
   );
 
-  set('pickBody',lines.join('\n'));
+  set('pickBody', lines.join('\n'));
+  set('pickIndicators',
+    '일봉\n' + indicatorText(item.d) +
+    '\n\n4시간봉\n' + indicatorText(h)
+  );
 }
 
-function renderCandidates(items){
+function renderCandidates(items) {
   $('candidateRows').replaceChildren();
 
-  for(const x of items){
-    const tr=document.createElement('tr');
-    const values=[
-      x.symbol,x.category,
-      x.tied?'혼조':x.side===1?'LONG':'SHORT',
-      x.score+'/100',
-      trendText(x.d.trend)+' / '+trendText(x.h.trend),
-      fmt(x.h.rsi,1),fmt(x.h.adx,1),fmt(x.h.atrPct,2)+'%'
+  for (const x of items) {
+    const tr = document.createElement('tr');
+    const values = [
+      x.symbol,
+      x.category,
+      x.tied ? '혼조' : x.side === 1 ? 'LONG' : 'SHORT',
+      x.score + '/100',
+      trendText(x.d.trend) + ' / ' + trendText(x.h.trend),
+      fmt(x.h.rsi, 1),
+      fmt(x.h.adx, 1),
+      fmt(x.h.atrPct, 2) + '%'
     ];
 
-    for(const value of values){
-      const td=document.createElement('td');
-      td.textContent=value;
+    for (const value of values) {
+      const td = document.createElement('td');
+      td.textContent = value;
       tr.append(td);
     }
+
     $('candidateRows').append(tr);
   }
 }
 
 /* ===================================================
-   BTC·시장 분석
+   BTC 방향성 전망
 =================================================== */
 
-function returnDays(rows,days){
-  const end=rows.at(-1);
-  const before=rows.find(x=>x.end===end.end-days*DAY);
-  return before?(end.close/before.close-1)*100:null;
+function buildForecast(btc, mark) {
+  const d = btc.d;
+  const h = btc.h;
+  const difference = btc.longScore - btc.shortScore;
+
+  let side = 0;
+  let title = '횡보·방향 탐색 우선';
+  let conclusion =
+    '상승·하락 근거가 충분히 정렬되지 않아 향후 24~72시간은 범위 내 등락이나 방향 탐색을 기본 시나리오로 봅니다. 횡보를 보장한다는 뜻은 아닙니다.';
+
+  if (h.adx >= 18 && difference >= 15 && h.trend === 1) {
+    side = 1;
+
+    if (d.trend === 1) {
+      title = '상승 지속 쪽 우세';
+      conclusion =
+        '일봉과 4시간봉의 상승 구조가 일치하고 롱 방향 점수가 우세합니다. 향후 24~72시간은 상승 재시도·상승 지속을 기본 시나리오로 두되, 지지 후보와 모멘텀 유지 여부를 확인합니다.';
+    } else if (d.trend === -1) {
+      title = '단기 반등 우세 · 큰 추세는 하락';
+      conclusion =
+        '4시간봉의 회복 신호가 우세해 단기 반등을 예상하는 쪽에 무게를 둡니다. 다만 일봉은 하락 흐름이므로 장기 상승 전환이 아닌 하락 추세 안의 반등일 수 있습니다.';
+    } else {
+      title = '단기 상승 시도 우세';
+      conclusion =
+        '4시간봉 상승 흐름과 롱 방향 점수가 우세해 단기 상승 시도를 기본 시나리오로 봅니다. 일봉 추세가 뚜렷하지 않아 지속성은 추가 확인이 필요합니다.';
+    }
+  } else if (h.adx >= 18 && difference <= -15 && h.trend === -1) {
+    side = -1;
+
+    if (d.trend === -1) {
+      title = '하락 지속 쪽 우세';
+      conclusion =
+        '일봉과 4시간봉의 하락 구조가 일치하고 숏 방향 점수가 우세합니다. 향후 24~72시간은 하단 재시험·하락 지속 위험을 기본 시나리오로 봅니다.';
+    } else if (d.trend === 1) {
+      title = '단기 조정 우세 · 큰 추세는 상승';
+      conclusion =
+        '4시간봉 약세와 숏 방향 점수가 우세해 단기 조정 지속 가능성에 무게를 둡니다. 다만 일봉은 상승 흐름이므로 장기 하락 전환으로 단정하지 않습니다.';
+    } else {
+      title = '단기 하락 시도 우세';
+      conclusion =
+        '4시간봉 하락 흐름과 숏 방향 점수가 우세해 하단 시험을 기본 시나리오로 봅니다. 일봉 추세가 뚜렷하지 않아 지속성은 추가 확인이 필요합니다.';
+    }
+  }
+
+  const aligned = side !== 0 && d.trend === side && h.trend === side;
+  let agreement = aligned
+    ? '시간대별 추세 일치'
+    : side !== 0 ? '부분 일치 · 반대 신호 존재' : '신호 혼조';
+
+  const cautions = [];
+
+  if (h.adx < 18) {
+    cautions.push('ADX가 낮아 추세형 예측의 근거가 약합니다.');
+  }
+
+  if (Math.abs(difference) < 15) {
+    cautions.push('롱·숏 점수 차가 작아 어느 방향도 뚜렷하게 우세하지 않습니다.');
+  }
+
+  if (h.rsi >= 70) {
+    cautions.push('RSI 과매수로 상승 전망 중에도 단기 되돌림이 나타날 수 있습니다.');
+  }
+
+  if (h.rsi <= 30) {
+    cautions.push('RSI 과매도로 하락 전망 중에도 급반등이 나타날 수 있습니다.');
+  }
+
+  if (h.volumeRatio !== null && h.volumeRatio < 0.7) {
+    cautions.push('최근 거래량이 약해 가격 움직임의 지속성을 확인해야 합니다.');
+  }
+
+  if (!mark) {
+    agreement += ' · 현재가 미확인';
+    cautions.push('현재 마크가격이 확인되지 않아 마지막 완료 봉까지만 반영한 전망입니다.');
+  } else if (Math.abs(mark.price - h.close) > h.atr) {
+    agreement += ' · 현재가 괴리 주의';
+    cautions.push('마크가격이 마지막 분석 종가에서 1 ATR 이상 이동해 전망의 현재 적용력이 낮아질 수 있습니다.');
+  }
+
+  return { side, title, conclusion, agreement, cautions };
 }
 
-function renderMarket(items,btcMark){
-  const btc=items.find(x=>x.symbol==='BTCUSDT');
-  const coins=items.filter(x=>
-    x.symbol!=='BTCUSDT'&&
-    ['메이저','알트'].includes(x.category)
-  );
+function returnDays(rows, days) {
+  const last = rows.at(-1);
+  const before = rows.find(x => x.end === last.end - days * DAY);
+  return before ? (last.close / before.close - 1) * 100 : null;
+}
 
-  set('marketTime','완료 봉 기준 '+stamp(marketNow));
+function clearMarket(message) {
+  btcBars = [];
+  set('btcPrice', '—');
+  set('btcChange', '');
+  set('btcTechnical', message);
+  set('btcIndicators', '유효 자료 없음');
+  set('forecastTitle', '예측 보류');
+  $('forecastTitle').className = 'big muted';
+  set('forecastBadge', '유효 자료 확인 필요');
+  set('marketReport', message);
+  set('breadth', '유효한 BTC 자료가 없어 상대성과 비교를 보류합니다.');
+  drawChart();
+}
 
-  if(!btc){
-    set('btcPrice','자료 확인 실패');
-    set('btcTechnical','BTC 분석을 위한 유효한 완료 봉이 없습니다.');
-    set('marketReport','BTC 가격 조건과 시장 방향 판단을 보류합니다.');
-    set('breadth','유효 BTC 자료가 없어 상대성과 비교를 보류합니다.');
+function renderMarket(items, btcMark) {
+  const btc = items.find(x => x.symbol === 'BTCUSDT');
+  set('marketTime', '완료 봉 기준 ' + stamp(marketNow));
+
+  if (!btc) {
+    clearMarket('BTC 분석을 위한 유효한 완료 봉이 없어 방향성과 가격 전망을 보류합니다.');
     return;
   }
 
-  const d=btc.d,h=btc.h;
-  const p=btcMark?btcMark.price:h.close;
+  const d = btc.d;
+  const h = btc.h;
+  const forecast = buildForecast(btc, btcMark);
+  const p = btcMark ? btcMark.price : h.close;
 
-  set('btcPrice',price(p)+' USDT');
-  set('btcChange',btcMark?
-    '마크가격 '+stamp(btcMark.time)+' · '+krw(p):
-    '마크가격 미확인 · 마지막 완료 4시간봉 종가');
-
-  set('btcTechnical',
-    '일봉 '+trendText(d.trend)+' / 4시간봉 '+trendText(h.trend)+
-    '\n4시간봉 완료 '+stamp(h.end)+
-    '\n\n'+indicatorText(h)
+  set('btcPrice', price(p) + ' USDT');
+  set('btcChange',
+    (btcMark
+      ? '조회 마크가격 ' + stamp(btcMark.time)
+      : '현재가 미확인 · 마지막 완료 4시간봉 종가') +
+    '\n원화 참고: ' + krw(p)
   );
 
-  const upper=h.high20+.1*h.atr;
-  const lower=h.low20-.1*h.atr;
-  const up=coins.filter(x=>x.d.trend===1&&x.h.trend===1).length;
-  const down=coins.filter(x=>x.d.trend===-1&&x.h.trend===-1).length;
+  set('btcTechnical', [
+    '일봉: ' + trendText(d.trend),
+    '4시간봉: ' + trendText(h.trend),
+    '4시간봉 완료: ' + stamp(h.end),
+    '롱 규칙 점수: ' + btc.longScore + ' / 100',
+    '숏 규칙 점수: ' + btc.shortScore + ' / 100',
+    '',
+    '점수와 점수 차이는 상승·하락 확률이 아닙니다.'
+  ].join('\n'));
 
-  let judgment='방향 확인 전 대기';
-  if(d.trend===1&&h.trend===1)judgment='상승 추세 우세 · 추격보다 눌림과 유지 여부 확인';
-  else if(d.trend===-1&&h.trend===-1)judgment='하락 위험 우선 관리';
-  else if(d.trend===-1&&h.trend===1)judgment='큰 하락 흐름 속 단기 반등 가능성';
-  else if(d.trend===1&&h.trend===-1)judgment='큰 상승 흐름 속 단기 조정 가능성';
+  set('btcIndicators', indicatorText(h));
+  set('forecastTitle', forecast.title);
 
-  const lines=[
-    '【현재 판단】',
-    judgment,
-    '일봉과 4시간봉을 구분한 기술적 해석이며 미래 방향을 보장하지 않습니다.',
+  $('forecastTitle').className = 'big ' + (
+    forecast.side > 0 ? 'positive'
+      : forecast.side < 0 ? 'negative' : 'warning'
+  );
+
+  set('forecastBadge', forecast.agreement);
+
+  // 기존 범위 밖에 ATR 0.1배의 완충선을 둔 정적 확인 가격
+  const upper = h.high20 + 0.1 * h.atr;
+  const lower = h.low20 - 0.1 * h.atr;
+
+  // 추세 약화 관찰선: EMA20/50 중 보수적인 쪽
+  const bullishWeak = Math.min(h.ema20, h.ema50);
+  const bearishWeak = Math.max(h.ema20, h.ema50);
+
+  const lines = [
+    '【방향성 예측 요약】',
+    forecast.conclusion,
     '',
-    '【비트코인 참고 가격대】',
-    '최근 완료 4시간봉 20개 최고가 '+price(h.high20),
-    '최근 완료 4시간봉 20개 최저가 '+price(h.low20),
-    '4시간 EMA20 '+price(h.ema20),
-    '일봉 EMA200 '+price(d.ema200),
-    '범위 극값·이동평균은 확정 지지·저항이 아닙니다.',
+    '예측 관찰 기간: 분석 시점 이후 약 24~72시간.',
+    '기간별 적중률을 검증한 모델은 아니며, 새 완료 봉이 나오면 재분석해야 합니다.',
     '',
-    '【상승 시나리오】',
-    '다음 완료 4시간봉 종가가 '+price(upper)+' 위에서 마감하면 상단 돌파를 관찰합니다.',
-    '이후 해당 기준 아래로 다시 마감하면 돌파 유지 해석이 약해집니다.',
+    '【왜 이렇게 예상하는가】',
+    interpretTechnical(btc),
     '',
-    '【하락 시나리오】',
-    lower>0?
-      '다음 완료 4시간봉 종가가 '+price(lower)+' 아래에서 마감하면 하단 이탈을 관찰합니다.':
-      '양수인 하락 확인선을 구성하지 못해 가격 조건을 보류합니다.',
-    lower>0?'이후 해당 기준 위로 회복 마감하면 이탈 지속 해석이 약해집니다.':'',
-    '확인선은 정적 참고값이므로 새 4시간봉 마감 후 재계산해야 합니다.',
+    '【핵심 참고 가격대 · USDT】',
+    '최근 20개 완료 4시간봉 최고가: ' + price(h.high20),
+    '최근 20개 완료 4시간봉 최저가: ' + price(h.low20),
+    '4시간 EMA20: ' + price(h.ema20),
+    '4시간 EMA50: ' + price(h.ema50),
+    '일봉 EMA200: ' + price(d.ema200),
+    '최근 극값과 이동평균은 지지·저항 후보일 뿐 확정된 벽이 아닙니다.',
     '',
-    '【코인 표본 현황】',
-    'BTC 제외 유효 코인 '+coins.length+'개 중',
-    '일봉·4시간 동반 상승 '+up+'개 / 동반 하락 '+down+'개.',
-    coins.length===0?'코인 확산 판단 자료 부족.':
-      up/coins.length>=.6?'선택 표본에서는 상승 추세가 비교적 넓게 나타납니다.':
-      down/coins.length>=.6?'선택 표본에서는 하락 추세가 비교적 넓게 나타납니다.':
-      '선택 표본의 방향이 갈려 선택적 강세·혼조로 봅니다.',
+    '【상승 확인 시나리오】',
+    '다음 완료 4시간봉 종가가 ' + price(upper) +
+    ' USDT 위에서 마감하면 최근 범위 상단 돌파를 확인하는 조건으로 봅니다.',
+    '거래량 증가와 +DI 우위가 함께 유지되면 상승 지속 해석을 보강할 수 있습니다.',
+    '돌파 후 해당 가격 아래로 다시 마감하면 돌파 유지 해석이 약해집니다.',
     '',
-    '공식 알트시즌·BTC 도미넌스나 시장 전체 자금 유입을 의미하지 않습니다.'
+    '상단 돌파 이후 ATR 투영 참고선: ' +
+    price(upper + h.atr) + ' / ' + price(upper + 2 * h.atr) + ' USDT.',
+    '돌파 확인선을 기준으로 1 ATR·2 ATR을 더한 값이며, 도달을 예측하거나 보장하는 목표가는 아닙니다.',
+    '',
+    '【하락 확인 시나리오】'
   ];
 
-  const comparison=[];
-  for(const days of [7,30,90]){
-    const br=returnDays(btc.daily,days);
-    const sample=coins.map(x=>returnDays(x.daily,days)).filter(finite);
-    const outperform=sample.filter(x=>x>br).length;
+  if (lower > 0) {
+    lines.push(
+      '다음 완료 4시간봉 종가가 ' + price(lower) +
+      ' USDT 아래에서 마감하면 최근 범위 하단 이탈을 확인하는 조건으로 봅니다.',
+      '거래량 증가와 -DI 우위가 함께 유지되면 하락 지속 해석을 보강할 수 있습니다.',
+      '이탈 후 해당 가격 위로 회복 마감하면 하락 지속 해석이 약해집니다.'
+    );
 
-    comparison.push(
-      days+'일 BTC 수익률 '+signed(br)+'%'+
-      ' / BTC 초과성과 '+outperform+'/'+sample.length+'개'+
-      (sample.length?' ('+fmt(outperform/sample.length*100,1)+'%)':'')
+    if (lower - 2 * h.atr > 0) {
+      lines.push(
+        '',
+        '하단 이탈 이후 ATR 투영 참고선: ' +
+        price(lower - h.atr) + ' / ' +
+        price(lower - 2 * h.atr) + ' USDT.',
+        '하단 확인선에서 1 ATR·2 ATR을 뺀 변동성 참고값입니다.'
+      );
+    }
+  } else {
+    lines.push('양수인 하락 확인선을 구성하지 못해 하락 가격 조건을 보류합니다.');
+  }
+
+  lines.push('', '【기본 전망이 약해지는 조건】');
+
+  if (forecast.side === 1) {
+    lines.push(
+      '다음 완료 4시간봉이 ' + price(bullishWeak) +
+      ' USDT 아래로 내려가 EMA20·EMA50을 모두 밑돌면 상승 구조가 약해집니다.',
+      'MACD 히스토그램 음수 전환과 -DI 우위가 동반되면 상승 전망을 다시 평가해야 합니다.'
+    );
+  } else if (forecast.side === -1) {
+    lines.push(
+      '다음 완료 4시간봉이 ' + price(bearishWeak) +
+      ' USDT 위로 올라 EMA20·EMA50을 모두 회복하면 하락 구조가 약해집니다.',
+      'MACD 히스토그램 양수 전환과 +DI 우위가 동반되면 하락 전망을 다시 평가해야 합니다.'
+    );
+  } else {
+    lines.push(
+      '상단 돌파 또는 하단 이탈 뒤 거래량과 추세 지표가 같은 방향으로 정렬되면 횡보·혼조 전망을 수정합니다.',
+      '현재는 범위 안이라는 이유만으로 지지선 매수·저항선 매도가 유리하다고 단정하지 않습니다.'
     );
   }
 
-  set('marketReport',lines.filter(x=>x!=='').join('\n'));
-  set('breadth',
-    '동일 완료 일봉 기준 단순 가격 수익률'+
-    '\n'+comparison.join('\n')+
-    '\n\nTradFi·지수·분류 미확인 상품은 코인 확산 통계에서 제외합니다.'+
-    '\n현재 상장·자료 충족·거래대금 중심 표본이므로 선정·생존 편향이 있습니다.'
+  lines.push(
+    '위 이동평균 가격과 돌파 확인선은 분석 당시의 정적 값입니다. 새 봉 이후에는 다시 계산해야 합니다.',
+    '',
+    '【예측의 약점과 위험】',
+    ...(forecast.cautions.length
+      ? forecast.cautions.map(x => '• ' + x)
+      : ['• 신호가 일치해도 추세가 갑자기 반전될 수 있습니다.']),
+    '• 뉴스·경제 일정·청산 연쇄·대규모 주문은 반영하지 않습니다.',
+    '• 지표들은 같은 가격 자료에서 파생되어 독립적인 증거가 아닙니다.',
+    '• 이 분석에 통계적으로 검증된 상승·하락 확률은 없습니다.'
   );
 
-  btcBars=btc.h4.slice(-90);
+  set('marketReport', lines.join('\n'));
+
+  const coins = items.filter(x =>
+    x.symbol !== 'BTCUSDT' &&
+    ['메이저', '알트'].includes(x.category)
+  );
+
+  const up = coins.filter(x => x.d.trend === 1 && x.h.trend === 1).length;
+  const down = coins.filter(x => x.d.trend === -1 && x.h.trend === -1).length;
+
+  const comparison = [];
+
+  for (const days of [7, 30, 90]) {
+    const btcReturn = returnDays(btc.daily, days);
+    const sample = coins
+      .map(x => returnDays(x.daily, days))
+      .filter(finite);
+
+    if (!finite(btcReturn)) {
+      comparison.push(days + '일: BTC 비교 자료 부족');
+      continue;
+    }
+
+    const outperform = sample.filter(x => x > btcReturn).length;
+
+    comparison.push(
+      days + '일 BTC 수익률 ' + signed(btcReturn) + '%' +
+      ' / BTC 초과성과 ' + outperform + '/' + sample.length + '개' +
+      (sample.length
+        ? ' (' + fmt(outperform / sample.length * 100, 1) + '%)'
+        : '')
+    );
+  }
+
+  set('breadth', [
+    '【선택한 코인 표본의 시장 확산】',
+    'BTC 제외 유효 코인 ' + coins.length + '개 중',
+    '일봉·4시간 동반 상승 ' + up + '개 / 동반 하락 ' + down + '개.',
+    coins.length === 0
+      ? '코인 확산 판단 자료가 부족합니다.'
+      : up / coins.length >= 0.6
+        ? '선택 표본에서는 상승 추세가 비교적 넓게 나타납니다.'
+        : down / coins.length >= 0.6
+          ? '선택 표본에서는 하락 추세가 비교적 넓게 나타납니다.'
+          : '선택 표본의 방향이 갈려 혼조로 해석합니다.',
+    '',
+    '【동일 완료 일봉 기준 단순 가격 수익률】',
+    ...comparison,
+    '',
+    'TradFi·지수·분류 미확인 상품은 코인 확산 통계에서 제외합니다.',
+    '공식 알트시즌 지수나 BTC 도미넌스가 아닙니다.',
+    '현재 상장·자료 충족·거래대금 중심 표본이므로 선정·생존 편향이 있습니다.'
+  ].join('\n'));
+
+  btcBars = btc.h4.slice(-90);
   drawChart();
 }
 
 /* ===================================================
-   캔들 차트
+   BTC 캔들 차트
 =================================================== */
 
-function drawChart(){
-  const canvas=$('btcChart');
-  const box=canvas.getBoundingClientRect();
-  if(!box.width||!box.height)return;
+function drawChart() {
+  const canvas = $('btcChart');
+  const box = canvas.getBoundingClientRect();
+  if (!box.width || !box.height) return;
 
-  const ratio=Math.min(window.devicePixelRatio||1,2);
-  canvas.width=Math.round(box.width*ratio);
-  canvas.height=Math.round(box.height*ratio);
+  const ratio = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.round(box.width * ratio);
+  canvas.height = Math.round(box.height * ratio);
 
-  const ctx=canvas.getContext('2d');
-  ctx.setTransform(ratio,0,0,ratio,0,0);
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
 
-  const w=box.width,h=box.height;
-  ctx.fillStyle='#191520';
-  ctx.fillRect(0,0,w,h);
-  ctx.font='10px system-ui';
-  ctx.fillStyle='#b1a6c2';
+  const w = box.width;
+  const h = box.height;
 
-  if(!btcBars.length){
-    ctx.fillText('완료 4시간봉 차트 대기',15,25);
+  ctx.fillStyle = '#191520';
+  ctx.fillRect(0, 0, w, h);
+  ctx.font = '10px system-ui';
+  ctx.fillStyle = '#b1a6c2';
+
+  if (!btcBars.length) {
+    ctx.fillText('완료 4시간봉 차트 대기', 15, 25);
     return;
   }
 
-  let high=Math.max(...btcBars.map(x=>x.high));
-  let low=Math.min(...btcBars.map(x=>x.low));
-  const pad=(high-low)*.08||high*.01;
-  high+=pad;
-  low-=pad;
+  let high = Math.max(...btcBars.map(x => x.high));
+  let low = Math.min(...btcBars.map(x => x.low));
+  const pad = (high - low) * 0.08 || high * 0.01;
+  high += pad;
+  low -= pad;
 
-  const left=5,right=78,top=15,bottom=25;
-  const width=w-left-right;
-  const height=h-top-bottom;
-  if(width<=0)return;
+  const left = 5;
+  const right = 78;
+  const top = 15;
+  const bottom = 25;
+  const width = w - left - right;
+  const height = h - top - bottom;
 
-  const y=p=>top+(high-p)/(high-low)*height;
-  const step=width/btcBars.length;
+  if (width <= 0) return;
 
-  for(let i=0;i<=4;i++){
-    const p=high-(high-low)*i/4;
-    ctx.strokeStyle='#393145';
+  const y = p => top + (high - p) / (high - low) * height;
+  const step = width / btcBars.length;
+
+  for (let i = 0; i <= 4; i++) {
+    const p = high - (high - low) * i / 4;
+    ctx.strokeStyle = '#393145';
     ctx.beginPath();
-    ctx.moveTo(left,y(p));
-    ctx.lineTo(left+width,y(p));
+    ctx.moveTo(left, y(p));
+    ctx.lineTo(left + width, y(p));
     ctx.stroke();
-    ctx.fillStyle='#b1a6c2';
-    ctx.fillText(fmt(p,0),left+width+4,y(p)+3);
+    ctx.fillStyle = '#b1a6c2';
+    ctx.fillText(fmt(p, 0), left + width + 4, y(p) + 3);
   }
 
-  btcBars.forEach((b,i)=>{
-    const x=left+(i+.5)*step;
-    ctx.fillStyle=ctx.strokeStyle=b.close>=b.open?'#52dcac':'#ff8092';
+  btcBars.forEach((b, i) => {
+    const x = left + (i + 0.5) * step;
+    ctx.fillStyle = ctx.strokeStyle =
+      b.close >= b.open ? '#52dcac' : '#ff8092';
+
     ctx.beginPath();
-    ctx.moveTo(x,y(b.high));
-    ctx.lineTo(x,y(b.low));
+    ctx.moveTo(x, y(b.high));
+    ctx.lineTo(x, y(b.low));
     ctx.stroke();
 
     ctx.fillRect(
-      x-step*.3,
-      y(Math.max(b.open,b.close)),
-      Math.max(.5,step*.6),
-      Math.max(1,Math.abs(y(b.open)-y(b.close)))
+      x - step * 0.3,
+      y(Math.max(b.open, b.close)),
+      Math.max(0.5, step * 0.6),
+      Math.max(1, Math.abs(y(b.open) - y(b.close)))
     );
   });
 
-  ctx.fillStyle='#b1a6c2';
+  ctx.fillStyle = '#b1a6c2';
   ctx.fillText(
-    new Date(btcBars[0].time).toISOString().slice(5,10),
-    left,h-6
+    new Date(btcBars[0].time).toISOString().slice(5, 10) + ' UTC',
+    left, h - 6
   );
-  ctx.textAlign='right';
+
+  ctx.textAlign = 'right';
   ctx.fillText(
-    new Date(btcBars.at(-1).time).toISOString().slice(5,10),
-    left+width,h-6
+    new Date(btcBars.at(-1).time).toISOString().slice(5, 10) + ' UTC',
+    left + width, h - 6
   );
-  ctx.textAlign='left';
+  ctx.textAlign = 'left';
 }
 
 /* ===================================================
-   탐색
+   최신 마크가격 및 후보 선택
 =================================================== */
 
-async function latestMark(symbol){
-  const before=Date.now();
-  const d=await api('/fapi/v1/premiumIndex?symbol='+encodeURIComponent(symbol));
+async function latestMark(symbol) {
+  const before = Date.now();
 
-  const priceValue=Number(d.markPrice);
-  const time=Number(d.time);
+  const data = await api(
+    '/fapi/v1/premiumIndex?symbol=' + encodeURIComponent(symbol)
+  );
 
-  if(!finite(priceValue)||priceValue<=0||!finite(time))
+  const priceValue = Number(data.markPrice);
+  const time = Number(data.time);
+
+  if (!finite(priceValue) || priceValue <= 0 || !finite(time)) {
     throw new Error('마크가격 검증 실패');
-
-  // 서버 시계 차이를 별도로 추정하여 가격 시각 확인
-  const start=Date.now();
-  const clock=await api('/fapi/v1/time');
-  const end=Date.now();
-
-  if(end-start>5000||end-before>20000||
-    !finite(Number(clock.serverTime))||
-    Number(clock.serverTime)-time>20000||
-    time-Number(clock.serverTime)>3000)
-    throw new Error('마크가격 최신성 검증 실패');
-
-  return {price:priceValue,time};
-}
-
-function selectUniverse(metas,tickers,count){
-  const volume=s=>Number(tickers.get(s)?.quoteVolume)||0;
-  const sorted=metas.slice().sort((a,b)=>volume(b.symbol)-volume(a.symbol));
-  const chosen=new Map();
-
-  function add(m){
-    if(m&&chosen.size<count)chosen.set(m.symbol,m);
   }
 
-  MAJORS.forEach(s=>add(metas.find(m=>m.symbol===s)));
+  const start = Date.now();
+  const clock = await api('/fapi/v1/time');
+  const end = Date.now();
+  const serverTime = Number(clock.serverTime);
 
-  // 확인된 TradFi가 있다면 비교 표본에 최대 5개 우선 확보
-  sorted.filter(m=>classify(m)==='TradFi').slice(0,5).forEach(add);
+  if (
+    end - start > 5000 ||
+    end - before > 20000 ||
+    !finite(serverTime) ||
+    serverTime - time > 20000 ||
+    time - serverTime > 3000
+  ) {
+    throw new Error('마크가격 최신성 검증 실패');
+  }
+
+  return { price: priceValue, time };
+}
+
+function selectUniverse(metas, tickers, count) {
+  const volume = symbol => Number(tickers.get(symbol)?.quoteVolume) || 0;
+
+  const sorted = metas.slice().sort(
+    (a, b) => volume(b.symbol) - volume(a.symbol)
+  );
+
+  const chosen = new Map();
+
+  function add(meta) {
+    if (meta && chosen.size < count) {
+      chosen.set(meta.symbol, meta);
+    }
+  }
+
+  MAJORS.forEach(symbol => add(metas.find(m => m.symbol === symbol)));
+
+  sorted
+    .filter(m => classify(m) === 'TradFi')
+    .slice(0, 5)
+    .forEach(add);
 
   sorted.forEach(add);
   return [...chosen.values()];
 }
 
-function resetAnalysis(){
-  latestItems=[];
-  btcBars=[];
+function resetAnalysis() {
+  lastSnapshot = null;
+  btcBars = [];
+
   $('candidateRows').replaceChildren();
-  set('pickTitle','분석 중 · BTC 우선 관찰');
-  set('pickBadge','자료 검증 중');
-  set('pickBody','기술적 분석 후보를 비교하고 있습니다.');
-  set('btcPrice','—');
-  set('btcChange','');
-  set('btcTechnical','분석 중');
-  set('marketReport','분석 중');
-  set('breadth','');
-  set('marketTime','자료 조회 중');
-  set('tradfiStatus','거래소 상품 분류 확인 중');
+  set('pickTitle', '분석 중 · BTC 우선 관찰');
+  set('pickBadge', '자료 검증 중');
+  set('pickBody', '기술적 분석 후보를 비교하고 있습니다.');
+  set('pickIndicators', '분석 중');
+
+  set('btcPrice', '—');
+  set('btcChange', '');
+  set('btcTechnical', '분석 중');
+  set('btcIndicators', '분석 중');
+
+  set('forecastTitle', '분석 중');
+  $('forecastTitle').className = 'big';
+  set('forecastBadge', '자료 검증 중');
+  set('marketReport', '가격·추세·거래량을 분석하고 있습니다.');
+  set('breadth', '');
+  set('marketTime', '자료 조회 중');
+  set('tradfiStatus', '거래소 상품 분류 확인 중');
+
   drawChart();
 }
 
-$('analyze').onclick=async()=>{
-  if(running)return;
+/* ===================================================
+   분석 실행
+=================================================== */
 
-  if(Date.now()<blockedUntil){
-    set('scanStatus','요청 제한 대기 중입니다. 잠시 뒤 다시 실행하세요.');
+$('analyze').onclick = async () => {
+  if (running) return;
+
+  if (Date.now() < blockedUntil) {
+    set('scanStatus', '요청 제한 대기 중입니다. 잠시 뒤 다시 실행하세요.');
     return;
   }
 
-  running=true;
-  owner=new AbortController();
-  $('analyze').disabled=true;
-  $('scanCount').disabled=true;
-  $('cancel').disabled=false;
-  $('progress').hidden=false;
+  running = true;
+  owner = new AbortController();
+
+  $('analyze').disabled = true;
+  $('scanCount').disabled = true;
+  $('cancel').disabled = false;
+  $('progress').hidden = false;
   $('progress').removeAttribute('value');
 
   resetAnalysis();
 
-  const results=[];
-  const failures=[];
+  const results = [];
+  const failures = [];
 
-  try{
-    set('scanStatus','거래소 시각·상품 목록·24시간 거래대금 조회 중');
+  try {
+    set('scanStatus', '거래소 시각·상품 목록·24시간 거래대금 조회 중');
 
-    const start=Date.now();
-    const clock=await api('/fapi/v1/time');
-    const end=Date.now();
-    marketNow=Number(clock.serverTime);
+    const start = Date.now();
+    const clock = await api('/fapi/v1/time');
+    const end = Date.now();
+    marketNow = Number(clock.serverTime);
 
-    if(!finite(marketNow)||end-start>5000)
+    if (!finite(marketNow) || end - start > 5000) {
       throw new Error('거래소 시각 동기화 확인 실패');
+    }
 
-    const exchange=await api('/fapi/v1/exchangeInfo');
-    const tickersRaw=await api('/fapi/v1/ticker/24hr');
+    const exchange = await api('/fapi/v1/exchangeInfo');
+    const tickersRaw = await api('/fapi/v1/ticker/24hr');
 
-    if(!Array.isArray(exchange.symbols)||!Array.isArray(tickersRaw))
+    if (!Array.isArray(exchange.symbols) || !Array.isArray(tickersRaw)) {
       throw new Error('거래소 상품 목록 형식 오류');
+    }
 
-    const tickers=new Map(tickersRaw.map(x=>[x.symbol,x]));
+    const tickers = new Map(tickersRaw.map(x => [x.symbol, x]));
 
-    const metas=exchange.symbols.filter(x=>
-      x.status==='TRADING'&&
-      x.contractType==='PERPETUAL'&&
-      x.quoteAsset==='USDT'&&
-      x.marginAsset==='USDT'&&
-      typeof x.symbol==='string'&&
-      /^[A-Z0-9_]{2,40}$/.test(x.symbol)&&
-      !NON_COIN.has(x.symbol)&&
-      Number(tickers.get(x.symbol)?.quoteVolume)>0
+    const metas = exchange.symbols.filter(x =>
+      x.status === 'TRADING' &&
+      x.contractType === 'PERPETUAL' &&
+      x.quoteAsset === 'USDT' &&
+      x.marginAsset === 'USDT' &&
+      typeof x.symbol === 'string' &&
+      /^[A-Z0-9_]{2,40}$/.test(x.symbol) &&
+      !NON_COIN.has(x.symbol) &&
+      Number(tickers.get(x.symbol)?.quoteVolume) > 0
     );
 
-    const universe=selectUniverse(
-      metas,tickers,Number($('scanCount').value)
+    const universe = selectUniverse(
+      metas, tickers, Number($('scanCount').value)
     );
 
-    if(!universe.length)
+    if (!universe.length) {
       throw new Error('분석 가능한 지원 계약 목록이 없습니다.');
+    }
 
-    const tradfiAll=metas.filter(x=>classify(x)==='TradFi').length;
-    const tradfiSelected=universe.filter(x=>classify(x)==='TradFi').length;
+    const tradfiAll = metas.filter(x => classify(x) === 'TradFi').length;
+    const tradfiSelected = universe.filter(x => classify(x) === 'TradFi').length;
 
     set('tradfiStatus',
-      tradfiAll?
-        'Binance 메타데이터에서 TradFi 관련 분류가 확인된 지원 계약 '+
-        tradfiAll+'개 중 '+tradfiSelected+'개를 표본에 포함합니다.'+
-        '\nUSDT 무기한 이외 상품이나 TradFi 전체 상품군을 포괄하지 않습니다.':
-        '현재 공개 API 메타데이터에서 TradFi로 명시된 지원 USDT 무기한 계약을 식별하지 못했습니다.'+
-        '\nTradFi 상품이 없다고 단정하지 않으며, 임의의 금·주식·외환 심볼을 만들어 포함하지 않습니다.'
+      tradfiAll
+        ? '거래소 메타데이터에서 TradFi 관련 분류가 확인된 지원 계약 ' +
+          tradfiAll + '개 중 ' + tradfiSelected + '개를 표본에 포함합니다.' +
+          '\nUSDT 무기한 이외 상품이나 TradFi 전체 상품군을 포괄하지 않습니다.'
+        : '공개 메타데이터에서 TradFi로 명시된 지원 USDT 무기한 계약을 식별하지 못했습니다.' +
+          '\nTradFi 상품이 없다고 단정하지 않으며 임의 심볼을 만들지 않습니다.'
     );
 
-    $('progress').max=universe.length;
-    $('progress').value=0;
+    $('progress').max = universe.length;
+    $('progress').value = 0;
 
-    for(let i=0;i<universe.length;i++){
+    for (let i = 0; i < universe.length; i++) {
       checkRun();
 
-      const meta=universe[i];
-      const requestStart=Date.now();
+      const meta = universe[i];
+      const requestStart = Date.now();
 
       set('scanStatus',
-        '차트 분석 '+(i+1)+'/'+universe.length+' · '+meta.symbol+
+        '차트 분석 ' + (i + 1) + '/' + universe.length + ' · ' + meta.symbol +
         '\n완료 일봉·4시간봉 및 추세·모멘텀·변동성·거래량 계산'
       );
 
-      try{
-        // 요청 폭주를 피하기 위해 순차 처리
-        const daily=await getBars(meta.symbol,'1d',DAY);
-        const h4=await getBars(meta.symbol,'4h',H4);
+      try {
+        const daily = await getBars(meta.symbol, '1d', DAY);
+        const h4 = await getBars(meta.symbol, '4h', H4);
         checkRun();
 
         results.push(evaluate(
-          meta,daily,h4,tickers.get(meta.symbol)
+          meta, daily, h4, tickers.get(meta.symbol)
         ));
-      }catch(e){
+      } catch (error) {
         checkRun();
-        failures.push(meta.symbol+': '+e.message);
+        failures.push(meta.symbol + ': ' + error.message);
       }
 
-      $('progress').value=i+1;
-      await sleep(Math.max(0,700-(Date.now()-requestStart)));
+      $('progress').value = i + 1;
+
+      // 요청 폭주를 줄이기 위한 순차 조회 및 최소 간격
+      await sleep(Math.max(0, 700 - (Date.now() - requestStart)));
     }
 
     checkRun();
 
-    results.sort((a,b)=>b.score-a.score||
-      Number(b.ticker.quoteVolume)-Number(a.ticker.quoteVolume));
+    results.sort((a, b) =>
+      b.score - a.score ||
+      Number(b.ticker.quoteVolume) - Number(a.ticker.quoteVolume)
+    );
 
-    latestItems=results;
     renderCandidates(results);
 
-    if(!results.length){
+    if (!results.length) {
       defaultPick('유효 차트 자료를 확보하지 못했습니다.');
-      renderMarket([],null);
-    }else{
-      const top=results[0];
-      let mark=null,markError='';
-      let btcMark=null;
+      renderMarket([], null);
+    } else {
+      const top = results[0];
+      let topMark = null;
+      let btcMark = null;
+      let markError = '';
 
-      try{
-        mark=await latestMark(top.symbol);
-      }catch(e){
+      try {
+        topMark = await latestMark(top.symbol);
+      } catch (error) {
         checkRun();
-        markError=e.message;
+        markError = error.message;
       }
 
-      if(top.symbol==='BTCUSDT')btcMark=mark;
-      else if(results.some(x=>x.symbol==='BTCUSDT')){
-        try{
-          btcMark=await latestMark('BTCUSDT');
-        }catch{
+      if (top.symbol === 'BTCUSDT') {
+        btcMark = topMark;
+      } else if (results.some(x => x.symbol === 'BTCUSDT')) {
+        try {
+          btcMark = await latestMark('BTCUSDT');
+        } catch {
           checkRun();
         }
       }
 
       checkRun();
-      renderPick(top,mark,markError);
-      renderMarket(results,btcMark);
+
+      renderPick(top, topMark, markError);
+      renderMarket(results, btcMark);
+
+      lastSnapshot = {
+        items: results,
+        top,
+        topMark,
+        btcMark,
+        markError
+      };
     }
 
-    const successfulTradfi=results.filter(x=>x.category==='TradFi').length;
-    if(tradfiSelected)
-      $('tradfiStatus').textContent+=
-        '\n지표 계산까지 통과한 TradFi 표본: '+successfulTradfi+'개';
+    if (tradfiSelected) {
+      const successfulTradfi = results.filter(
+        x => x.category === 'TradFi'
+      ).length;
+
+      $('tradfiStatus').textContent +=
+        '\n지표 계산까지 통과한 TradFi 표본: ' + successfulTradfi + '개';
+    }
 
     set('scanStatus',
-      '분석 완료 · 유효 '+results.length+'/'+universe.length+'개'+
-      '\n완료 봉 공통 기준 '+stamp(marketNow)+
-      '\n생성 시각 '+stamp(Date.now())+
-      '\n정적 자료입니다. 새 시세를 반영하려면 다시 분석하세요.'+
-      (failures.length?
-        '\n\n제외·실패 '+failures.length+'개'+
-        '\n'+failures.slice(0,8).join('\n')+
-        (failures.length>8?'\n그 외 '+(failures.length-8)+'개':''):'')
+      '분석 완료 · 유효 ' + results.length + '/' + universe.length + '개' +
+      '\n완료 봉 공통 기준: ' + stamp(marketNow) +
+      '\n생성 시각: ' + stamp(Date.now()) +
+      '\n정적 자료입니다. 새 시세를 반영하려면 다시 분석하세요.' +
+      (failures.length
+        ? '\n\n제외·실패 ' + failures.length + '개\n' +
+          failures.slice(0, 8).join('\n') +
+          (failures.length > 8 ? '\n그 외 ' + (failures.length - 8) + '개' : '')
+        : '')
     );
 
-  }catch(e){
-    defaultPick(e.message);
+  } catch (error) {
+    lastSnapshot = null;
+    $('candidateRows').replaceChildren();
+
+    defaultPick(error.message);
+    clearMarket('분석이 완료되지 않아 BTC 방향성과 시장 판단을 보류합니다.');
+
     set('scanStatus',
-      '분석 미완료: '+e.message+
+      '분석 미완료: ' + error.message +
       '\n완료되지 않은 부분 탐색 결과로 매매 추천을 확정하지 않습니다.'
     );
-    set('marketReport','분석이 완료되지 않아 시장 판단을 보류합니다.');
-    set('btcTechnical','분석 미완료');
-    set('marketTime','분석 미완료');
-    if($('tradfiStatus').textContent==='거래소 상품 분류 확인 중')
-      set('tradfiStatus','TradFi 상품 분류를 확인하지 못했습니다.');
-  }finally{
-    running=false;
-    owner=null;
-    $('analyze').disabled=false;
-    $('scanCount').disabled=false;
-    $('cancel').disabled=true;
-    $('progress').hidden=true;
+
+    set('marketTime', '분석 미완료');
+
+    if ($('tradfiStatus').textContent === '거래소 상품 분류 확인 중') {
+      set('tradfiStatus', 'TradFi 상품 분류를 확인하지 못했습니다.');
+    }
+  } finally {
+    running = false;
+    owner = null;
+
+    $('analyze').disabled = false;
+    $('scanCount').disabled = false;
+    $('cancel').disabled = true;
+    $('progress').hidden = true;
   }
 };
 
-$('cancel').onclick=()=>{
-  if(owner){
+$('cancel').onclick = () => {
+  if (owner) {
     owner.abort();
-    $('cancel').disabled=true;
-    set('scanStatus','분석 중지 요청을 받았습니다.');
+    $('cancel').disabled = true;
+    set('scanStatus', '분석 중지 요청을 받았습니다.');
   }
 };
 
-window.addEventListener('pagehide',()=>{
+window.addEventListener('pagehide', () => {
   owner?.abort();
 });
 
-if('ResizeObserver' in window){
+if ('ResizeObserver' in window) {
   new ResizeObserver(drawChart).observe($('btcChart').parentElement);
-}else{
-  window.addEventListener('resize',drawChart);
+} else {
+  window.addEventListener('resize', drawChart);
 }
+
+/* ===================================================
+   초기화
+=================================================== */
 
 calcFutures();
 calcSpot();
+updateConversion();
 drawChart();
 
 set('tradfiStatus',
